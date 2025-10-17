@@ -580,12 +580,3 @@ async function onBulkCancel(){
     await loadAdminUpcoming(); if(state.room) await refreshMonth(false); await loadOverview(false);
   }catch(err){ modalClose(); modalError('Gagal membatalkan', err.message); }
 }
-
-/* ========= Events bind akhir ========= */
-function renderOverview(){ if (ov.view === 'calendar') { renderOvCalendar(); renderOvSummary(); } else { renderOvTable(); } }
-function onPickedDateChange(){} // sudah di atas; kekal untuk simbolik
-// bind yang tertinggal
-document.addEventListener('click', e=>{
-  if(e.target?.id==='btnViewCalendar') switchOverviewView('calendar');
-  if(e.target?.id==='btnViewTable') switchOverviewView('table');
-});
