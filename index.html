@@ -4,8 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width" />
   <title>eROM@AG — Tempahan Bilik • PPD Alor Gajah</title>
+
+  <!-- Oswald -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     :root{--bg:#f6f8fb;--text:#111827;--muted:#6b7280;--primary:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--off:#9ca3af;--card:#fff;--ring:#e5e7eb}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Oswald',Arial,sans-serif}
@@ -58,7 +65,6 @@
     #ovSummaryWrap{margin-top:12px;border-top:1px dashed var(--ring);padding-top:10px}
     #ovSummaryList{columns:3; column-gap:20px}
     @media (max-width:900px){ #ovSummaryList{columns:1} }
-    @media (max-width:960px){ .toolbar{grid-template-columns:1fr 1fr} }
     /* Admin lock */
     #adminLoginBox{display:block}
     #adminPanel{display:none}
@@ -259,7 +265,7 @@
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
   </script>
 
-  <!-- Logik (Supabase, bukan Google Sheets lagi) -->
+  <!-- Logik (Supabase) -->
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -268,6 +274,28 @@
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
+    /* ====== Konstanta bilik & kategori (fixed) ====== */
+    const ROOM_OPTIONS = [
+      "PKG Ganun - Bilik Kursus (30 orang)",
+      "PKG Melekek - Bilik Kuliah 1 (20 orang)",
+      "PKG Masjid Tanah - Bilik Seri Cempaka (24 orang)",
+      "PKG Masjid Tanah - Bilik Seri Melur (18 orang)",
+      "PKG Masjid Tanah - Bilik Pendidikan Digital (12 orang)",
+      "Bilik Mesyuarat PPDAG di SK Alor Gajah 1 (40 orang)",
+      "Bilik Mesyuarat Utama PPDAG (73 orang)",
+      "Bilik Mesyuarat Kecil PPDAG (15 orang)",
+      "Makmal Komputer PPDAG (31 orang)",
+      "Bilik Seminar PPDAG (22 orang)",
+      "Bilik Temuduga PPDAG (4 orang)",
+      "Bilik Runding Cara PPDAG (4 orang)",
+      "Kafeteria PPDAG (30 orang)"
+    ];
+    const CATEGORY_OPTIONS = [
+      "Mesyuarat / Taklimat",
+      "Bengkel / Kursus",
+      "Lain-Lain"
+    ];
+
     /* ====== Notifikasi & utiliti ====== */
     const Toast = Swal.mixin({ toast:true, position:'top', showConfirmButton:false, timer:2200, timerProgressBar:true });
     const $ = (id) => document.getElementById(id);
@@ -275,10 +303,8 @@
     const formatMonthLabel = (y,m)=> new Intl.DateTimeFormat('ms-MY',{month:'long',year:'numeric'}).format(new Date(y,m-1,1));
     const toYMD = (d)=> `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
     const firstDay = (y,m)=> `${y}-${pad2(m)}-01`;
-    const lastDay = (y,m)=> toYMD(new Date(Date.UTC(y,m,0)));
-    const isWeekendYMD = ymd => [0,6].includes(new Date(ymd+'T00:00:00').getDay());
+    const lastDay  = (y,m)=> toYMD(new Date(Date.UTC(y,m,0)));
     const todayYMD = ()=> toYMD(new Date());
-
     function toastOk(t){Toast.fire({icon:'success',title:t});}
     function toastInfo(t){Toast.fire({icon:'info',title:t});}
     function toastWarn(t){Toast.fire({icon:'warning',title:t});}
@@ -287,10 +313,10 @@
     function modalError(title, text){ Swal.fire(title||'Ralat', text||'Terjadi ralat yang tidak dijangka.', 'error'); }
     async function modalConfirm(title, text){ const r=await Swal.fire({ title, text, icon:'question', showCancelButton:true, confirmButtonText:'Teruskan', cancelButtonText:'Batal' }); return r.isConfirmed; }
     function markInvalid(el){ el.classList.add('invalid'); setTimeout(()=>el.classList.remove('invalid'), 1200); el.focus(); }
-    function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+    function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);}
     function addDaysYMD(ymd,n){ const [y,m,d]=ymd.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return toYMD(dt); }
 
-    /* ====== Data statik (sektor→nama) — kekalkan dari versi asal ====== */
+    /* ====== Data statik (sektor→nama) — kekal ====== */
     const NAMA_MENGIKUT_SEKTOR = {
       "Pengurusan Tertinggi": ["Tuan Haji Ab Malek Bin Kasim (B.K.T)","En. Azhar Bin Md Nor (B.C.M)","En. Abd Jabar Bin Md Yusup (P.J.K)","En. Muhammad Hamka Bin Dollah","En. Bashir Bin Abu Bakar"],
       "School Improvement Partner (SIP+)": ["En. Amran Bin Abdul Sukor","En. Abd. Razak Bin Adam","Pn. Rafidah Binti Abd Rahim"],
@@ -303,13 +329,11 @@
       "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","Pn. Habsah Binti Maidin","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","En. Azharul Nizam Bin Othmawi","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
     };
 
-    /* ====== “API wrapper” gaya lama, tapi guna Supabase ====== */
+    /* ====== “API wrapper” (masih Supabase), init kini guna senarai tetap ====== */
     async function getInit(){
-      // Bilik & kategori dari view
-      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori');
-      if (error) throw error;
-      const rooms = [...new Set((data||[]).map(x=>x.bilik).filter(Boolean))].sort();
-      const categories = [...new Set((data||[]).map(x=>x.kategori).filter(Boolean))].sort();
+      // Kategori dan bilik kini fixed
+      const rooms = [...ROOM_OPTIONS];
+      const categories = [...CATEGORY_OPTIONS];
       const sektor = Object.keys(NAMA_MENGIKUT_SEKTOR);
       return { rooms, categories, sektor };
     }
@@ -324,7 +348,6 @@
         .order('tarikh', { ascending:true }).order('masa_mula', { ascending:true });
       if (error) throw error;
 
-      // Bentuk peta hari -> senarai tempahan
       const byDate = new Map();
       (data||[]).forEach(r=>{
         const list = byDate.get(r.tarikh) || [];
@@ -332,7 +355,6 @@
         byDate.set(r.tarikh, list);
       });
 
-      // Sediakan 1 bulan penuh
       const days = [];
       const last = Number(to.slice(-2));
       for(let d=1; d<=last; d++){
@@ -353,9 +375,8 @@
         .gte('tarikh', from).lte('tarikh', to);
       if (error) throw error;
 
-      // Agregat: kira bilik per tarikh, label status by bilik (>=6 tempahan = red, >0 = orange)
       const map = new Map(); // date -> { rooms:[{room,status}], counts:{red,orange} }
-      const perRoomPerDay = new Map(); // key "date|room" -> count
+      const perRoomPerDay = new Map(); // "date|room" -> count
       (data||[]).forEach(r=>{
         const key = `${r.tarikh}|${r.bilik}`;
         perRoomPerDay.set(key, (perRoomPerDay.get(key)||0) + 1);
@@ -431,7 +452,7 @@
       return { updated: data.updated|0 };
     }
 
-    /* ====== Kod UI: kekalkan dari versi asal, tapi panggil wrapper Supabase di atas ====== */
+    /* ====== Keadaan UI ====== */
     let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false };
     let ov = { year:null, month:null, days:[], view:'calendar', filterRoom:'' };
     let ALL_ROOMS = [];
@@ -468,7 +489,7 @@
       }
     }
 
-    /* ====== UI & event handlers (asal) ====== */
+    /* ====== UI helpers & handlers ====== */
     function hydrateSelect(sel, items, includeFirstAsPlaceholder=false){
       sel.innerHTML=''; items.forEach((v,i)=> sel.appendChild(new Option(v, includeFirstAsPlaceholder && i===0 ? '' : v)));
     }
@@ -529,7 +550,7 @@
       if(!sekVal || !list){ namaSel.appendChild(new Option('— Sila pilih sektor dahulu —','')); namaSel.disabled=true; return; }
       namaSel.disabled=false; namaSel.appendChild(new Option('— Pilih nama —','')); list.forEach(n=> namaSel.appendChild(new Option(n,n)));
     }
-    function populateOvRoomFilter(){ const sel=$('ovRoomFilter'); sel.innerHTML='<option value="">— Semua Bilik —</option>'; ALL_ROOMS.forEach(r=> sel.appendChild(new Option(r,r))); }
+    function populateOvRoomFilter(){ const sel=$('ovRoomFilter'); sel.innerHTML='<option value="">— Semua Bilik —</option>'; ROOM_OPTIONS.forEach(r=> sel.appendChild(new Option(r,r))); }
 
     function resetUI(){
       const now=new Date(); state.year=now.getFullYear(); state.month=now.getMonth()+1; $('monthLabel').textContent=formatMonthLabel(state.year,state.month);
@@ -663,7 +684,7 @@
     function updateRangeCounter(){
       if(!state.rangeMode){ $('rangeCounter').textContent=''; return;}
       let d=state.range.from, n=0; if(!state.range.from||!state.range.to){ $('rangeCounter').textContent='Akan ditempah: 0 hari bekerja'; return; }
-      while(d<=state.range.to){ const wk=isWeekendYMD(d); const past=d<todayYMD(); if(!wk && !past) n++; d=addDaysYMD(d,1); }
+      while(d<=state.range.to){ const wk=[0,6].includes(new Date(d+'T00:00:00').getDay()); const past=d<todayYMD(); if(!wk && !past) n++; d=addDaysYMD(d,1); }
       $('rangeCounter').textContent=`Akan ditempah: ${n} hari bekerja`;
     }
 
@@ -688,16 +709,16 @@
       modalLoading('Menyimpan tempahan...');
       try {
         if (state.rangeMode) {
-          inputs.startDate = $('fromDate').value;
-          inputs.endDate = $('toDate').value;
-          if (!inputs.startDate){ modalClose(); markInvalid($('fromDate')); return toastWarn('Isi Tarikh Dari'); }
-          if (!inputs.endDate){ modalClose(); markInvalid($('toDate')); return toastWarn('Isi Tarikh Hingga'); }
-          const res = await createBookingRange(inputs);
+          const startDate = $('fromDate').value;
+          const endDate   = $('toDate').value;
+          if (!startDate){ modalClose(); markInvalid($('fromDate')); return toastWarn('Isi Tarikh Dari'); }
+          if (!endDate){ modalClose(); markInvalid($('toDate')); return toastWarn('Isi Tarikh Hingga'); }
+          const res = await createBookingRange({ ...inputs, startDate, endDate });
           modalClose(); toastOk(`Disimpan: ${res.savedCount||0} hari`); if(res.skipped?.length) toastInfo(`Diabaikan: ${res.skipped.length} hari tidak sah`);
         } else {
-          inputs.date = $('pickedDate').value;
-          if (!inputs.date){ modalClose(); markInvalid($('pickedDate')); return toastWarn('Pilih Tarikh Dipilih'); }
-          await createBooking(inputs);
+          const date = $('pickedDate').value;
+          if (!date){ modalClose(); markInvalid($('pickedDate')); return toastWarn('Pilih Tarikh Dipilih'); }
+          await createBooking({ ...inputs, date });
           modalClose(); toastOk('Tempahan disimpan');
         }
         if(state.room) await refreshMonth(false);
@@ -761,10 +782,10 @@
       }
     }
     function renderOvSummary(){
-      const list = $('ovSummaryList'); list.innerHTML=''; if(!ALL_ROOMS.length){ $('ovSummaryWrap').style.display='none'; return; }
+      const list = $('ovSummaryList'); list.innerHTML='';
       const counter = new Map();
       (ov.days||[]).forEach(d=> (d.rooms||[]).forEach(r=> counter.set(r.room, (counter.get(r.room)||0) + 1)));
-      const rows = ALL_ROOMS.map(room => [room, counter.get(room)||0]).sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(a[0],'ms'));
+      const rows = ROOM_OPTIONS.map(room => [room, counter.get(room)||0]).sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(a[0],'ms'));
       list.innerHTML = rows.map(([room,c])=> `• ${room} (${c} tempahan)`).join('<br>');
       $('ovSummaryWrap').style.display='block';
     }
@@ -772,13 +793,14 @@
       const tbody = $('ovTableBody'); tbody.innerHTML='';
       const rows = []; (ov.days||[]).forEach(d=>{ (d.rooms||[]).forEach(r=> rows.push({date:d.date, room:r.room, status:r.status})); });
       const filtered = ov.filterRoom ? rows.filter(r=>r.room===ov.filterRoom) : rows;
-      filtered.sort((a,b)=> a.date.localeCompare(b.date) || (a.status==='red'?-1:1) || a.room.localeCompare(b.room,'ms'));
+      filtered.sort((a,b)=> a.date.localeCompare(b.date) || (a.status==='red'?-1:1) || a.room.localeCompare(a.room,'ms'));
       const frag=document.createDocumentFragment();
       filtered.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${x.date}</td><td>${x.room}</td><td><span class="tag ${x.status==='red'?'red':'orange'}">${x.status==='red'?'Penuh':'Separa Penuh'}</span></td>`; frag.appendChild(tr); });
       tbody.appendChild(frag);
     }
 
     /* ====== Admin ====== */
+    let ADMIN_PASSWORD = '';
     async function onAdminLogin(){
       const { value: pw } = await Swal.fire({ title:'Kata laluan pentadbir', input:'password', inputPlaceholder:'Masukkan kata laluan', inputAttributes:{autocapitalize:'off',autocorrect:'off'}, confirmButtonText:'Sahkan', showCancelButton:true });
       if (!pw) return;
@@ -835,9 +857,8 @@
       }catch(err){ modalClose(); modalError('Gagal membatalkan', err.message); }
     }
 
-    /* ====== Overview helpers ====== */
-    function renderTableRows(){}
-    function onPickedMonth(){}
+    /* ====== Boot ====== */
+    function populateOvRoomFilter(){ const sel=$('ovRoomFilter'); sel.innerHTML='<option value="">— Semua Bilik —</option>'; ROOM_OPTIONS.forEach(r=> sel.appendChild(new Option(r,r))); }
   </script>
 </body>
 </html>
