@@ -5,7 +5,7 @@ const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error("Konfigurasi Supabase tidak lengkap pada window.*");
+  throw new Error("Konfigurasi Supabase tidak lengkap pada window.SUPABASE_URL/ANON_KEY");
 }
 
 export const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

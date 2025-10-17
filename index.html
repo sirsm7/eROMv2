@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>eROM@AG • Paparan Tempahan</title>
+
+  <!-- Oswald wajib -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root{--card:#fff;--muted:#6b7280;--border:#e5e7eb;--bg:#f6f8fb;--ink:#111827}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Oswald',Arial,sans-serif}
+    .container{max-width:1100px;margin:24px auto;padding:12px}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr auto auto auto;gap:10px;align-items:end}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:16px}
+    label{font-size:.9rem;color:var(--muted)}
+    select,input[type="month"]{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit}
+    button{padding:10px 14px;border:none;border-radius:12px;font-family:inherit;cursor:pointer}
+    .primary{background:#2563eb;color:#fff}
+    .ghost{background:#fff;border:1px solid var(--border);color:#111827}
+    #app-output{margin-top:16px}
+    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;background:#fff}
+    thead th{background:#f3f4f6;text-align:left;padding:10px;border-bottom:1px solid var(--border)}
+    tbody td{padding:10px;border-top:1px solid var(--border)}
+    tbody tr:first-child td{border-top:none}
+    .muted{color:var(--muted)}
+    @media print{
+      .no-print{display:none !important}
+      body{background:#fff}
+      table{box-shadow:none;border:1px solid #000}
+      thead th, tbody td{border-color:#000}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="no-print">eROM@AG • Paparan Tempahan</h1>
+
+    <div class="card no-print">
+      <div class="toolbar">
+        <div>
+          <label for="room">Bilik</label>
+          <select id="room">
+            <option value="">Semua bilik</option>
+          </select>
+        </div>
+        <div>
+          <label for="category">Kategori</label>
+          <select id="category">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div>
+          <label for="month">Bulan</label>
+          <input id="month" type="month" />
+        </div>
+        <button id="btnReload" class="primary" title="Muat semula">Muat Semula</button>
+        <button id="btnCopy" class="ghost" title="Salin ke Clipboard">Salin</button>
+        <button id="btnPrint" class="ghost" title="Cetak">Cetak</button>
+      </div>
+      <p class="muted" style="margin:8px 0 0">Data dibaca dari view baca-sahaja. Tulis/kemaskini akan datang, sabar. Dunia tak musnah kalau tunggu 1 langkah lagi.</p>
+    </div>
+
+    <!-- Paparan utama WAJIB dalam satu DIV -->
+    <div id="app-output" class="card"></div>
+  </div>
+
+  <!-- Konfigurasi runtime: GANTI jika perlu -->
+  <script>
+    window.SUPABASE_URL = "https://ixnnhsorpyqqxytqaclu.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
+  </script>
+
+  <script type="module">
+    import { supa } from './src/api/supabaseClient.js';
+
+    const $ = (id) => document.getElementById(id);
+    const Toast = Swal.mixin({ toast:true, position:'top', timer:2200, showConfirmButton:false, timerProgressBar:true });
+
+    // Utiliti kecil
+    const pad2 = (n)=> String(n).padStart(2,'0');
+    const toISO = (d)=> d.toISOString().slice(0,10);
+    const firstDay = (yyyyMM)=>{
+      const [y,m] = yyyyMM.split('-').map(Number);
+      return `${y}-${pad2(m)}-01`;
+    };
+    const lastDay = (yyyyMM)=>{
+      const [y,m] = yyyyMM.split('-').map(Number);
+      const d = new Date(Date.UTC(y, m, 0)); // hari terakhir bulan
+      return toISO(d);
+    };
+
+    async function loadFilters() {
+      // Ambil bilik & kategori distinct dari view
+      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori').order('bilik', { ascending: true });
+      if (error) throw error;
+      const rooms = [...new Set((data||[]).map(x=>x.bilik).filter(Boolean))];
+      const cats  = [...new Set((data||[]).map(x=>x.kategori).filter(Boolean))];
+
+      // Isi dropdown bilik
+      const roomSel = $('room');
+      roomSel.innerHTML = `<option value="">Semua bilik</option>` + rooms.map(r=>`<option>${escapeHtml(r)}</option>`).join('');
+
+      // Isi dropdown kategori
+      const catSel = $('category');
+      catSel.innerHTML = `<option value="">Semua</option>` + cats.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
+
+      // Set default input month = bulan semasa
+      const now = new Date();
+      $('month').value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
+    }
+
+    async function loadAndRender() {
+      try{
+        const yyyyMM = $('month').value || new Date().toISOString().slice(0,7);
+        const from = firstDay(yyyyMM);
+        const to   = lastDay(yyyyMM);
+        const room = $('room').value;
+        const cat  = $('category').value;
+
+        let q = supa.from('v_bookings_active')
+          .select('tarikh,masa_mula,masa_tamat,bilik,kategori,tujuan,nama_penempah,sektor')
+          .gte('tarikh', from).lte('tarikh', to)
+          .order('tarikh', { ascending: true })
+          .order('masa_mula', { ascending: true });
+
+        if (room) q = q.eq('bilik', room);
+        if (cat)  q = q.eq('kategori', cat);
+
+        const { data, error } = await q;
+        if (error) throw error;
+
+        renderTable(data || [], { month: yyyyMM, room, cat });
+        // selesai inject DOM → butang Cetak akan guna ini
+        window.__rendered = true;
+      }catch(err){
+        Swal.fire('Ralat', err.message || String(err), 'error');
+      }
+    }
+
+    function renderTable(rows, meta){
+      const el = $('app-output');
+      if (!rows.length) {
+        el.innerHTML = `<p class="muted">Tiada rekod untuk penapis semasa.</p>`;
+        return;
+      }
+      const hdr = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><strong>Ringkasan</strong> • Bulan: ${escapeHtml(meta.month)} ${meta.room?`• Bilik: ${escapeHtml(meta.room)}`:''} ${meta.cat?`• Kategori: ${escapeHtml(meta.cat)}`:''}</div>
+          <div class="muted">${rows.length} rekod</div>
+        </div>
+      `;
+      const table = `
+        <table aria-label="Jadual Tempahan">
+          <thead>
+            <tr>
+              <th>Tarikh</th>
+              <th>Masa</th>
+              <th>Bilik</th>
+              <th>Kategori</th>
+              <th>Tujuan</th>
+              <th>Nama</th>
+              <th>Sektor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`
+              <tr>
+                <td>${escapeHtml(r.tarikh)}</td>
+                <td>${escapeHtml(r.masa_mula)}–${escapeHtml(r.masa_tamat)}</td>
+                <td>${escapeHtml(r.bilik)}</td>
+                <td>${escapeHtml(r.kategori)}</td>
+                <td>${escapeHtml(r.tujuan || '')}</td>
+                <td>${escapeHtml(r.nama_penempah)}</td>
+                <td>${escapeHtml(r.sektor)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      el.innerHTML = hdr + table;
+    }
+
+    // Salin jadual sebagai TSV
+    function copyTable() {
+      const table = document.querySelector('#app-output table');
+      if (!table) { Toast.fire({icon:'info', title:'Tiada data untuk disalin'}); return; }
+      const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace(/\t/g,' ')).join('\t')).join('\n');
+      navigator.clipboard.writeText(rows).then(
+        () => Toast.fire({ icon:'success', title:'Disalin ke Clipboard' }),
+        () => Swal.fire('Ralat', 'Gagal menyalin ke Clipboard', 'error')
+      );
+    }
+
+    // Print selepas DOM siap
+    function printNow(){
+      if (!window.__rendered) { Toast.fire({icon:'info', title:'Tiada data untuk dicetak'}); return; }
+      setTimeout(()=>window.print(), 50);
+    }
+
+    // XSS guard kecil
+    function escapeHtml(s){
+      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // Event handlers
+    $('btnReload').addEventListener('click', loadAndRender);
+    $('btnCopy').addEventListener('click', copyTable);
+    $('btnPrint').addEventListener('click', printNow);
+    $('room').addEventListener('change', loadAndRender);
+    $('category').addEventListener('change', loadAndRender);
+    $('month').addEventListener('change', loadAndRender);
+
+    // Boot
+    (async function boot(){
+      await loadFilters().catch(err => Swal.fire('Ralat', err.message || String(err), 'error'));
+      await loadAndRender();
+    })();
+  </script>
+</body>
+</html>
