@@ -3,370 +3,841 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>eROM@AG • Tempahan & Paparan</title>
-
-  <!-- Oswald -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>eROM@AG — Tempahan Bilik • PPD Alor Gajah</title>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
   <style>
-    :root{--card:#fff;--muted:#6b7280;--border:#e5e7eb;--bg:#f6f8fb;--ink:#111827}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Oswald',Arial,sans-serif}
-    .container{max-width:1100px;margin:24px auto;padding:12px}
-    .grid{display:grid;gap:12px}
-    .two{grid-template-columns:1fr 1fr}
-    .three{grid-template-columns:1fr 1fr 1fr}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:16px}
-    .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr auto auto auto;gap:10px;align-items:end}
-    label{font-size:.9rem;color:var(--muted)}
-    select,input[type="month"],input[type="date"],input[type="time"],input[type="text"]{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit}
-    textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit;min-height:60px}
-    button{padding:10px 14px;border:none;border-radius:12px;font-family:inherit;cursor:pointer}
-    .primary{background:#2563eb;color:#fff}
-    .ghost{background:#fff;border:1px solid var(--border);color:#111827}
-    .danger{background:#dc2626;color:#fff}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .muted{color:var(--muted)}
-    #app-output{margin-top:16px}
-    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;background:#fff}
-    thead th{background:#f3f4f6;text-align:left;padding:10px;border-bottom:1px solid var(--border)}
-    tbody td{padding:10px;border-top:1px solid var(--border)}
-    tbody tr:first-child td{border-top:none}
-    @media print{
-      .no-print{display:none !important}
-      body{background:#fff}
-      table{box-shadow:none;border:1px solid #000}
-      thead th, tbody td{border-color:#000}
-    }
+    :root{--bg:#f6f8fb;--text:#111827;--muted:#6b7280;--primary:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--off:#9ca3af;--card:#fff;--ring:#e5e7eb}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Oswald',Arial,sans-serif}
+    .wrap{max-width:1150px;margin:18px auto;padding:12px}
+    h1{font-size:1.5rem;margin:.25rem 0 .75rem}
+    .tabs{display:flex;gap:8px;border-bottom:1px solid var(--ring);margin-bottom:10px;flex-wrap:wrap}
+    .tabbtn{border:1px solid var(--ring);border-bottom:none;background:#f8fafc;color:#111827;padding:10px 14px;border-top-left-radius:12px;border-top-right-radius:12px;cursor:pointer}
+    .tabbtn.active{background:#fff;border-color:var(--ring);font-weight:600}
+    .tabpane{display:none}.tabpane.active{display:block}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    select,input[type="time"],input[type="text"],input[type="date"],button{font-family:inherit;font-size:1rem;border:1px solid var(--ring);border-radius:10px;padding:8px 10px;background:#fff;outline:none}
+    select:focus,input:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    .btn{border:none;background:var(--primary);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;transition:.2s}
+    .btn.secondary{background:#111827}.btn.ghost{background:#fff;border:1px solid var(--ring);color:#111827}
+    .legend{display:flex;gap:12px;align-items:center;margin:8px 0 4px;flex-wrap:wrap}
+    .dot{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid #0001}
+    .dot.green{background:var(--ok)} .dot.orange{background:var(--warn)} .dot.red{background:var(--bad)} .dot.disabled{background:var(--off)}
+    .calendar{display:grid;grid-template-rows:auto 1fr;gap:8px}
+    .weekday{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;font-size:.9rem;color:var(--muted)} .weekday div{text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .tile{background:var(--card);border:1px solid var(--ring);border-radius:12px;min-height:118px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+    .tile.disabled{background:#f3f4f6;color:#9ca3af;pointer-events:none}
+    .tile .date{font-size:1rem;font-weight:600;padding:8px 10px;display:flex;align-items:center;gap:8px}
+    .badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:.75rem;line-height:1;color:#fff}
+    .badge.red{background:var(--bad)} .badge.orange{background:var(--warn)} .badge.green{background:var(--ok)}
+    .counts{margin-left:auto;font-size:.75rem;color:#374151;background:#eef2f7;border:1px solid var(--ring);border-radius:999px;padding:2px 8px}
+    .tile .body{padding:0 10px 10px;font-size:.95rem;line-height:1.2}
+    .listRooms{max-height:96px;overflow-y:auto;padding-bottom:2px}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;border:1px solid var(--ring);margin:2px 4px 2px 0}
+    .pill.red{background:rgba(220,38,38,.10);border-color:rgba(220,38,38,.25);color:#991b1b}
+    .pill.orange{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.25);color:#92400e}
+    .grid .blank{visibility:hidden}
+    .sel{outline:3px solid rgba(37,99,235,.35)}
+    .tile.range{outline:3px solid rgba(37,99,235,.35)}
+    .small{font-size:.85rem;color:#6b7280}
+    .toolbar{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+    .monthnav{display:flex;gap:8px;align-items:center}
+    .switch{display:inline-flex;background:#eef2f7;border:1px solid var(--ring);border-radius:10px;overflow:hidden}
+    .switch button{padding:6px 12px;border:none;background:transparent;cursor:pointer}
+    .switch button.active{background:#fff}
+    .counter{font-size:.9rem;color:#111827;background:#f1f5f9;border:1px solid var(--ring);padding:6px 10px;border-radius:10px;display:inline-block}
+    table{width:100%;border-collapse:collapse;border:1px solid var(--ring)} th,td{padding:8px;border-bottom:1px solid var(--ring);text-align:left;font-size:.95rem}
+    th{background:#f8fafc}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;border:1px solid var(--ring);background:#f1f5f9}
+    .tag.red{background:rgba(220,38,38,.10);border-color:rgba(220,38,38,.25);color:#991b1b}
+    .tag.orange{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.25);color:#92400e}
+    .req::after{content:" *"; color:#dc2626}
+    .invalid{box-shadow:0 0 0 3px rgba(220,38,38,.18) !important; border-color:#dc2626 !important}
+    #ovSummaryWrap{margin-top:12px;border-top:1px dashed var(--ring);padding-top:10px}
+    #ovSummaryList{columns:3; column-gap:20px}
+    @media (max-width:900px){ #ovSummaryList{columns:1} }
+    @media (max-width:960px){ .toolbar{grid-template-columns:1fr 1fr} }
+    /* Admin lock */
+    #adminLoginBox{display:block}
+    #adminPanel{display:none}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="no-print">eROM@AG • Tempahan & Paparan</h1>
+  <div class="wrap">
+    <h1>eROM@AG — Sistem Pengurusan Tempahan Bilik PPD Alor Gajah</h1>
 
-    <!-- BORANG TEMPAHAN BARU -->
-    <div class="card no-print">
-      <h2 style="margin:0 0 10px">Tempahan Baru</h2>
-      <div class="grid three">
-        <div>
-          <label for="f_room">Bilik</label>
-          <select id="f_room"><option value="">Pilih bilik</option></select>
-        </div>
-        <div>
-          <label for="f_category">Kategori</label>
-          <select id="f_category">
-            <option value="">Pilih kategori</option>
-            <option>Mesyuarat</option>
-            <option>Latihan</option>
-            <option>Ujian</option>
-            <option>Taklimat</option>
-          </select>
-        </div>
-        <div>
-          <label for="f_sektor">Sektor</label>
-          <input id="f_sektor" type="text" placeholder="Contoh: Sektor Perancangan" />
-        </div>
-      </div>
-
-      <div class="grid two" style="margin-top:10px">
-        <div>
-          <label for="f_nama">Nama Penempah</label>
-          <input id="f_nama" type="text" placeholder="Nama penuh" />
-        </div>
-        <div>
-          <label for="f_note">Tujuan</label>
-          <input id="f_note" type="text" placeholder="Tujuan ringkas" />
-        </div>
-      </div>
-
-      <div class="grid three" style="margin-top:10px">
-        <div>
-          <label for="f_date">Tarikh</label>
-          <input id="f_date" type="date" />
-        </div>
-        <div>
-          <label for="f_start">Masa Mula</label>
-          <input id="f_start" type="time" value="09:00" />
-        </div>
-        <div>
-          <label for="f_end">Masa Tamat</label>
-          <input id="f_end" type="time" value="10:00" />
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px;align-items:center">
-        <label style="display:flex;gap:8px;align-items:center"><input id="f_range" type="checkbox" /> Berturut</label>
-        <div id="rangeWrap" style="display:none" class="row">
-          <div>
-            <label for="f_from" style="display:block;color:var(--muted);font-size:.9rem">Tarikh Dari</label>
-            <input id="f_from" type="date" />
-          </div>
-          <div>
-            <label for="f_to" style="display:block;color:var(--muted);font-size:.9rem">Tarikh Hingga</label>
-            <input id="f_to" type="date" />
-          </div>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px">
-        <button id="btnSubmit" class="primary">Rekod Tempahan</button>
-        <button id="btnReset" class="ghost" type="button">Kosongkan</button>
-      </div>
-
-      <p class="muted" style="margin:8px 0 0">Waktu dibenarkan 08:00–17:00. Tarikh hujung minggu dan tarikh lampau disekat di klien dan juga di server.</p>
+    <div class="tabs">
+      <button id="tabTempahanBtn" class="tabbtn active">Tempahan</button>
+      <button id="tabKalendarBtn" class="tabbtn">Rumusan Tempahan</button>
+      <button id="tabAdminBtn" class="tabbtn">Pentadbir</button>
     </div>
 
-    <!-- PANEL PENAPIS & TINDAKAN PAPARAN -->
-    <div class="card no-print">
-      <div class="toolbar">
+    <!-- Tab Tempahan -->
+    <section id="tabTempahan" class="tabpane active">
+      <div class="card toolbar">
         <div>
-          <label for="room">Bilik</label>
-          <select id="room"><option value="">Semua bilik</option></select>
+          <label class="small req">Pilih Bilik</label><br>
+          <select id="roomSelect" required><option value="">Sila Pilih Bilik</option></select>
         </div>
-        <div>
-          <label for="category">Kategori</label>
-          <select id="category"><option value="">Semua</option></select>
+        <div class="monthnav" style="justify-self:end">
+          <button class="btn ghost" id="btnPrev">&lt; Bulan Sebelum</button>
+          <div class="small" id="monthLabel" style="min-width:160px;text-align:center;font-weight:600;color:#111827"></div>
+          <button class="btn ghost" id="btnNext">Bulan Seterusnya &gt;</button>
         </div>
-        <div>
-          <label for="month">Bulan</label>
-          <input id="month" type="month" />
+        <div style="text-align:right">
+          <button class="btn secondary" id="btnRefresh">Segar Semula</button>
         </div>
-        <button id="btnReload" class="primary" title="Muat semula">Muat Semula</button>
-        <button id="btnCopy" class="ghost" title="Salin ke Clipboard">Salin</button>
-        <button id="btnPrint" class="ghost" title="Cetak">Cetak</button>
       </div>
-      <p class="muted" style="margin:8px 0 0">Paparan bawah hanya baca-sahaja dari view.</p>
-    </div>
 
-    <!-- Paparan utama -->
-    <div id="app-output" class="card"></div>
+      <div class="card">
+        <div class="legend">
+          <span class="dot green"></span><span class="small">Tiada tempahan</span>
+          <span class="dot orange"></span><span class="small">Separa Penuh</span>
+          <span class="dot red"></span><span class="small">Penuh</span>
+          <span class="dot disabled"></span><span class="small">Hujung Minggu / Tarikh Lampau</span>
+        </div>
+
+        <div class="calendar">
+          <div class="weekday"><div>Isn</div><div>Sel</div><div>Rab</div><div>Kha</div><div>Jum</div><div>Sab</div><div>Aha</div></div>
+          <div class="grid" id="grid"></div>
+        </div>
+
+        <div class="small" id="noRoomHint" style="display:none;margin-top:6px">
+          Sila pilih bilik untuk melihat kalendar tempahan.
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px">
+        <div class="row" style="justify-content:space-between">
+          <div class="switch" title="Tempahan berturut">
+            <button id="toggleRangeOff" class="active" type="button">1 Hari</button>
+            <button id="toggleRangeOn" type="button">Berturut</button>
+          </div>
+          <div id="rangeCounter" class="counter" style="display:none">Akan ditempah: 0 hari bekerja</div>
+        </div>
+
+        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap">
+          <div>
+            <label class="small req">Tarikh Dipilih</label><br>
+            <input id="pickedDate" type="date" required>
+          </div>
+          <div id="fromDateWrap" style="display:none">
+            <label class="small req">Tarikh Dari</label><br>
+            <input id="fromDate" type="date">
+          </div>
+          <div id="toDateWrap" style="display:none">
+            <label class="small req">Tarikh Hingga</label><br>
+            <input id="toDate" type="date">
+          </div>
+
+          <div>
+            <label class="small req">Masa Mula (≥ 08:00)</label><br>
+            <input id="startTime" type="time" min="08:00" max="17:00" step="1800" required>
+          </div>
+          <div>
+            <label class="small req">Masa Tamat (≤ 17:00)</label><br>
+            <input id="endTime" type="time" min="08:00" max="17:00" step="1800" required>
+          </div>
+          <div>
+            <label class="small req">Kategori</label><br>
+            <select id="category" required></select>
+          </div>
+
+          <div style="min-width:320px;flex:1">
+            <label class="small req">Tujuan / Ringkasan</label><br>
+            <input id="note" type="text" placeholder="Contoh: Taklimat SPI Bil." required minlength="3" maxlength="200" oninput="this.value=this.value.trimStart()">
+          </div>
+
+          <div>
+            <label class="small req">Sektor</label><br>
+            <select id="sektor" required></select>
+          </div>
+          <div>
+            <label class="small req">Nama Penempah</label><br>
+            <select id="nama" required disabled><option value="">— Sila pilih sektor dahulu —</option></select>
+          </div>
+
+          <div style="align-self:end"><button class="btn" id="btnBook">Rekod Tempahan</button></div>
+        </div>
+
+        <div class="small" style="margin-top:8px">
+          Waktu operasi: Isnin–Jumaat, 08:00–17:00. Tempahan hujung minggu & tarikh lampau tidak dibenarkan.
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Rumusan -->
+    <section id="tabKalendar" class="tabpane">
+      <div class="card toolbar">
+        <div>
+          <div class="small" style="font-weight:600">Rumusan Semua Bilik (Read-only)</div>
+          <div style="margin-top:4px;">
+            <label class="small">Tapis Bilik:</label>
+            <select id="ovRoomFilter" style="padding:4px 8px; font-size:0.9rem; border-radius: 8px;">
+              <option value="">— Semua Bilik —</option>
+            </select>
+          </div>
+        </div>
+        <div class="monthnav" style="justify-self:end">
+          <button class="btn ghost" id="ovPrev">&lt; Bulan Sebelum</button>
+          <div class="small" id="ovMonthLabel" style="min-width:160px;text-align:center;font-weight:600;color:#111827"></div>
+          <button class="btn ghost" id="ovNext">Bulan Seterusnya &gt;</button>
+        </div>
+        <div class="switch">
+          <button id="btnViewCalendar" class="active" type="button">Kalendar</button>
+          <button id="btnViewTable" type="button">Jadual</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="legend">
+          <span class="dot red"></span><span class="small">Merah = Penuh</span>
+          <span class="dot orange"></span><span class="small">Jingga = Separa Penuh</span>
+          <span class="small" style="margin-left:auto">Bilik tanpa tempahan tidak dipaparkan</span>
+        </div>
+
+        <div id="ovCalendarWrap">
+          <div class="calendar">
+            <div class="weekday"><div>Isn</div><div>Sel</div><div>Rab</div><div>Kha</div><div>Jum</div><div>Sab</div><div>Aha</div></div>
+            <div class="grid" id="ovGrid"></div>
+          </div>
+          <div id="ovSummaryWrap" style="display:none">
+            <div id="ovSummaryList" class="small"></div>
+          </div>
+        </div>
+
+        <div id="ovTableWrap" style="display:none">
+          <table>
+            <thead><tr><th style="width:140px">Tarikh</th><th>Bilik</th><th style="width:160px">Status</th></tr></thead>
+            <tbody id="ovTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Admin -->
+    <section id="tabAdmin" class="tabpane">
+      <div class="card">
+        <div id="adminLoginBox">
+          <div class="row" style="justify-content:space-between">
+            <div style="font-weight:600">Panel Pentadbir</div>
+            <div class="small" id="adminWho">Belum log masuk</div>
+          </div>
+          <div class="row" style="margin-top:8px; gap:12px">
+            <button class="btn ghost" id="btnAdminLogin">Log Masuk</button>
+          </div>
+        </div>
+
+        <div id="adminPanel">
+          <div class="row" style="justify-content:space-between">
+            <div style="font-weight:600">Panel Pentadbir</div>
+            <div class="small">Akses: Pentadbir</div>
+          </div>
+
+          <div class="row" style="margin-top:8px; gap:12px">
+            <div>
+              <label class="small">Pilih Bilik (Admin)</label><br>
+              <select id="adminRoom"><option value="">Sila Pilih Bilik</option></select>
+            </div>
+            <div style="align-self:end; display:flex; gap:8px">
+              <button class="btn ghost" id="btnAdminLoad">Muat Senarai</button>
+              <button class="btn" id="btnBulkCancel" style="background:#dc2626">Batalkan Terpilih</button>
+            </div>
+          </div>
+
+          <div id="adminList" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- KONFIGURASI RUNTIME (projek anda sekarang) -->
+  <!-- Konfigurasi Supabase -->
   <script>
     window.SUPABASE_URL = "https://ixnnhsorpyqqxytqaclu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
   </script>
 
-  <!-- LOGIK APLIKASI -->
+  <!-- Logik (Supabase, bukan Google Sheets lagi) -->
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    /* ===== Supabase client stateless ===== */
+    /* ====== Supabase client ====== */
     const supa = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
-    /* ===== Utiliti asas ===== */
+    /* ====== Notifikasi & utiliti ====== */
+    const Toast = Swal.mixin({ toast:true, position:'top', showConfirmButton:false, timer:2200, timerProgressBar:true });
     const $ = (id) => document.getElementById(id);
-    const Toast = Swal.mixin({ toast:true, position:'top', timer:2200, showConfirmButton:false, timerProgressBar:true });
+    const pad2 = n => String(n).padStart(2,'0');
+    const formatMonthLabel = (y,m)=> new Intl.DateTimeFormat('ms-MY',{month:'long',year:'numeric'}).format(new Date(y,m-1,1));
+    const toYMD = (d)=> `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    const firstDay = (y,m)=> `${y}-${pad2(m)}-01`;
+    const lastDay = (y,m)=> toYMD(new Date(Date.UTC(y,m,0)));
+    const isWeekendYMD = ymd => [0,6].includes(new Date(ymd+'T00:00:00').getDay());
+    const todayYMD = ()=> toYMD(new Date());
 
-    const pad2 = (n)=> String(n).padStart(2,'0');
-    const toISO = (d)=> d.toISOString().slice(0,10);
-    const firstDay = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); return `${y}-${pad2(m)}-01`; };
-    const lastDay  = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); const d=new Date(Date.UTC(y,m,0)); return toISO(d); };
-    const isWeekend = (d)=> [0,6].includes(new Date(d+'T00:00:00').getDay());
-    const isPast = (d)=> new Date(d+'T00:00:00') < new Date(new Date().toDateString());
-    const withinBiz = (s,e)=> s >= '08:00' && e <= '17:00' && s < e;
-    const escapeHtml = (s)=> String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    function toastOk(t){Toast.fire({icon:'success',title:t});}
+    function toastInfo(t){Toast.fire({icon:'info',title:t});}
+    function toastWarn(t){Toast.fire({icon:'warning',title:t});}
+    function modalLoading(title='Memproses...'){ Swal.fire({ title, allowOutsideClick:false, didOpen:()=>Swal.showLoading() }); }
+    function modalClose(){ Swal.close(); }
+    function modalError(title, text){ Swal.fire(title||'Ralat', text||'Terjadi ralat yang tidak dijangka.', 'error'); }
+    async function modalConfirm(title, text){ const r=await Swal.fire({ title, text, icon:'question', showCancelButton:true, confirmButtonText:'Teruskan', cancelButtonText:'Batal' }); return r.isConfirmed; }
+    function markInvalid(el){ el.classList.add('invalid'); setTimeout(()=>el.classList.remove('invalid'), 1200); el.focus(); }
+    function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+    function addDaysYMD(ymd,n){ const [y,m,d]=ymd.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return toYMD(dt); }
 
-    /* ===== Borang: kawalan ===== */
-    $('f_range').addEventListener('change', (e)=>{
-      $('rangeWrap').style.display = e.target.checked ? 'flex' : 'none';
-      if (e.target.checked) {
-        $('f_from').value = $('f_date').value || todayISO();
-        $('f_to').value   = $('f_date').value || todayISO();
-      }
-    });
-    $('btnReset').addEventListener('click', resetForm);
-    $('btnSubmit').addEventListener('click', onSubmit);
+    /* ====== Data statik (sektor→nama) — kekalkan dari versi asal ====== */
+    const NAMA_MENGIKUT_SEKTOR = {
+      "Pengurusan Tertinggi": ["Tuan Haji Ab Malek Bin Kasim (B.K.T)","En. Azhar Bin Md Nor (B.C.M)","En. Abd Jabar Bin Md Yusup (P.J.K)","En. Muhammad Hamka Bin Dollah","En. Bashir Bin Abu Bakar"],
+      "School Improvement Partner (SIP+)": ["En. Amran Bin Abdul Sukor","En. Abd. Razak Bin Adam","Pn. Rafidah Binti Abd Rahim"],
+      "Sektor Perancangan": ["En. Saifullah Bin Abdul Wahab","En. Hairoldin Rahim Bin Taya"],
+      "Sektor Pembelajaran": ["En. Hairuljaki Bin Omar","Pn. Zuraini Binti Bakri","Ustazah Pauziah Binti Othman","En. Razman Bin Mohammad","En. Mohd Anis Bin Abdul Majid","Pn. Norasiah Binti Ahmad","Pn. Wan Norhayati Binti Wan Ibrahim","Pn. Sabiah Binti Ninggal","Pn. Puteri Hanizah Binti Megat Amaddin","Pn. Khairul Bariah Binti Ismail","Pn. Rohana Binti Jantan","En. Fakrul Izhar Bin Ramlee","Ustaz Mahadi Bin Suboh","Ustaz Kamarul Zaman Bin Sahat","En. Mohd Shahril Amri B. Mohamed Shahar","En. Mohd Eirwan Bin Halim","Pn. Mariyam Binti Ahmad","En. Wan Norarif Bin Wan Muhammad","Pn. Nor Jamilahton Holija'ah Bt Ariffin","En. Munzir Bin Md Rosnan","En. Mohd Rizal Bin Maslah","Pn. Faezah Binti Ali","En. Mohd Izwan Bin Othman","En. Mohd Kamarul Hafiz Bin Abdul Rashid","En. Malik Abdullah Bin Adanan","Pn. Mas Azahwati Binti Ab Aziz"],
+      "Sektor Pengurusan Sekolah": ["Pn. Addelennoor Binti Abu","Pn. Siti Noorus Sa'adah Binti Md Ramli","En. Muhammad Hafiz Bin Hamdan","En. Mazli Bin Malek","En. Kadin Bin Abu @ Sim Ah Tong","En. Nor Afandi Bin Safar","En. Adnan Bin Isenin","Pn. Kavitha A/P Kannan","Pn. Irmadila Binti Mat Ismail","Pn. Masayu Binti Kari"],
+      "Sektor Pembangunan Murid": ["En. Wan Mohd Syarifuddin Bin Wan Hasan","En. Ismail Asib Bin Md Amin","En. Mohammad Misbahuddin Bin Abu Mansor"],
+      "Sektor Pentaksiran & Peperiksaan": ["En. Mohd Rahdi Bin Ahmad","En. Zaidi Bin Jaafar"],
+      "Psikologi & Kaunseling": ["En. Mohd Saberi Bin Minhat @ Bulat"],
+      "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","Pn. Habsah Binti Maidin","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","En. Azharul Nizam Bin Othmawi","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
+    };
 
-    function todayISO(){
-      const d = new Date(); d.setHours(0,0,0,0);
-      return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    /* ====== “API wrapper” gaya lama, tapi guna Supabase ====== */
+    async function getInit(){
+      // Bilik & kategori dari view
+      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori');
+      if (error) throw error;
+      const rooms = [...new Set((data||[]).map(x=>x.bilik).filter(Boolean))].sort();
+      const categories = [...new Set((data||[]).map(x=>x.kategori).filter(Boolean))].sort();
+      const sektor = Object.keys(NAMA_MENGIKUT_SEKTOR);
+      return { rooms, categories, sektor };
     }
-    function readForm(){
+
+    async function getMonthView({ room, year, month }){
+      const from = firstDay(year, month), to = lastDay(year, month);
+      const { data, error } = await supa
+        .from('v_bookings_active')
+        .select('tarikh, masa_mula, masa_tamat, kategori, tujuan')
+        .eq('bilik', room)
+        .gte('tarikh', from).lte('tarikh', to)
+        .order('tarikh', { ascending:true }).order('masa_mula', { ascending:true });
+      if (error) throw error;
+
+      // Bentuk peta hari -> senarai tempahan
+      const byDate = new Map();
+      (data||[]).forEach(r=>{
+        const list = byDate.get(r.tarikh) || [];
+        list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
+        byDate.set(r.tarikh, list);
+      });
+
+      // Sediakan 1 bulan penuh
+      const days = [];
+      const last = Number(to.slice(-2));
+      for(let d=1; d<=last; d++){
+        const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
+        const bookings = byDate.get(ymd) || [];
+        const count = bookings.length;
+        const status = count===0 ? 'green' : (count>=6 ? 'red' : 'orange'); // heuristik
+        days.push({ date: ymd, weekday: (new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
+      }
+      return { days };
+    }
+
+    async function getMonthRoomsOverview({ year, month }){
+      const from = firstDay(year, month), to = lastDay(year, month);
+      const { data, error } = await supa
+        .from('v_bookings_active')
+        .select('tarikh,bilik')
+        .gte('tarikh', from).lte('tarikh', to);
+      if (error) throw error;
+
+      // Agregat: kira bilik per tarikh, label status by bilik (>=6 tempahan = red, >0 = orange)
+      const map = new Map(); // date -> { rooms:[{room,status}], counts:{red,orange} }
+      const perRoomPerDay = new Map(); // key "date|room" -> count
+      (data||[]).forEach(r=>{
+        const key = `${r.tarikh}|${r.bilik}`;
+        perRoomPerDay.set(key, (perRoomPerDay.get(key)||0) + 1);
+      });
+      const last = Number(to.slice(-2));
+      for(let d=1; d<=last; d++){
+        const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
+        const rooms = [];
+        let red=0, orange=0;
+        perRoomPerDay.forEach((cnt, key)=>{
+          const [date, room] = key.split('|');
+          if (date !== ymd) return;
+          const status = cnt>=6 ? 'red' : 'orange';
+          if (status==='red') red++; else orange++;
+          rooms.push({ room, status });
+        });
+        map.set(ymd, { rooms, counts:{red,orange}, date: ymd });
+      }
+      return { days: [...map.values()] };
+    }
+
+    async function adminCheck(pw){
+      const { data, error } = await supa.rpc('fn_admin_check', { pw });
+      if (error) throw error;
+      return { ok: !!data, isAdmin: !!data };
+    }
+
+    async function createBooking(args){
+      const { data, error } = await supa.rpc('fn_create_booking', {
+        p_room: args.room, p_date: args.date, p_start: args.start, p_end: args.end,
+        p_category: args.category, p_note: args.note, p_sektor: args.sektor, p_nama: args.nama
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan');
+      return data;
+    }
+
+    async function createBookingRange(args){
+      const { data, error } = await supa.rpc('fn_create_booking_range', {
+        p_room: args.room, p_start_date: args.startDate, p_end_date: args.endDate,
+        p_start: args.start, p_end: args.end, p_category: args.category,
+        p_note: args.note, p_sektor: args.sektor, p_nama: args.nama
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan julat');
+      return data;
+    }
+
+    async function listUpcomingBookings({ room }){
+      const today = todayYMD();
+      const { data, error } = await supa
+        .from('v_bookings_active')
+        .select('booking_id, tarikh, masa_mula, masa_tamat, bilik, kategori, tujuan, nama_penempah, sektor')
+        .eq('bilik', room)
+        .gte('tarikh', today)
+        .order('tarikh',{ascending:true})
+        .order('masa_mula',{ascending:true});
+      if (error) throw error;
       return {
-        room: $('f_room').value.trim(),
-        category: $('f_category').value.trim(),
-        sektor: $('f_sektor').value.trim(),
-        nama: $('f_nama').value.trim(),
-        note: $('f_note').value.trim(),
-        date: $('f_date').value,
-        start: $('f_start').value,
-        end: $('f_end').value,
-        isRange: $('f_range').checked,
-        from: $('f_from')?.value,
-        to: $('f_to')?.value
+        items: (data||[]).map(r=>({
+          id: r.booking_id, date: r.tarikh, start: r.masa_mula, end: r.masa_tamat,
+          room: r.bilik, category: r.kategori, note: r.tujuan, nama: r.nama_penempah, sektor: r.sektor
+        }))
       };
     }
-    function validateForm(v){
-      if (!v.room || !v.category || !v.sektor || !v.nama) return 'Sila lengkapkan semua medan wajib.';
-      if (!v.date && !v.isRange) return 'Sila pilih tarikh.';
-      if (!withinBiz(v.start, v.end)) return 'Waktu mesti antara 08:00–17:00 dan sah.';
-      if (v.isRange) {
-        if (!v.from || !v.to) return 'Sila pilih Tarikh Dari dan Hingga.';
-        if (v.from > v.to) return 'Tarikh Dari melebihi Tarikh Hingga.';
-      } else {
-        if (isPast(v.date) || isWeekend(v.date)) return 'Tarikh hujung minggu atau lampau tidak dibenarkan.';
-      }
-      return null;
-    }
-    async function onSubmit(){
-      try{
-        const v = readForm();
-        const err = validateForm(v);
-        if (err) { Swal.fire('Gagal', err, 'error'); return; }
 
-        if (!v.isRange) {
-          const args = { p_room:v.room, p_date:v.date, p_start:v.start, p_end:v.end, p_category:v.category, p_note:v.note, p_sektor:v.sektor, p_nama:v.nama };
-          const { data, error } = await supa.rpc('fn_create_booking', args);
-          if (error) throw error;
-          if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan');
-          Toast.fire({ icon:'success', title:'Tempahan disimpan' });
-        } else {
-          const args = { p_room:v.room, p_start_date:v.from, p_end_date:v.to, p_start:v.start, p_end:v.end, p_category:v.category, p_note:v.note, p_sektor:v.sektor, p_nama:v.nama };
-          const { data, error } = await supa.rpc('fn_create_booking_range', args);
-          if (error) throw error;
-          if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan range');
-          Toast.fire({ icon:'success', title:`Disimpan: ${data.savedCount} hari, Diabaikan: ${data.skipped?.length ?? 0}` });
-        }
-
-        await loadAndRender();
-        resetForm();
-      }catch(err){
-        Swal.fire('Ralat', err.message || String(err), 'error');
-      }
-    }
-    function resetForm(){
-      $('f_category').value = '';
-      $('f_sektor').value = '';
-      $('f_nama').value = '';
-      $('f_note').value = '';
-      $('f_date').value = '';
-      $('f_start').value = '09:00';
-      $('f_end').value = '10:00';
-      $('f_range').checked = false;
-      $('rangeWrap').style.display = 'none';
-      $('f_from').value = '';
-      $('f_to').value = '';
-    }
-
-    /* ===== Paparan: penapis & jadual ===== */
-    function setDefaultMonth(){
-      const now = new Date();
-      $('month').value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
-    }
-    async function loadFilters() {
-      // Ambil bilik & kategori distinct dari view
-      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori').order('bilik');
+    async function batalTempahanBulk({ ids, reason, adminPassword }){
+      const { data, error } = await supa.rpc('fn_batal_tempahan_bulk', {
+        p_ids: ids, p_admin_password: adminPassword, p_reason: reason
+      });
       if (error) throw error;
-      const rooms = [...new Set((data||[]).map(x=>x.bilik).filter(Boolean))];
-      const cats  = [...new Set((data||[]).map(x=>x.kategori).filter(Boolean))];
-
-      const roomSel = $('room'); const roomForm = $('f_room');
-      roomSel.innerHTML = `<option value="">Semua bilik</option>` + rooms.map(r=>`<option>${escapeHtml(r)}</option>`).join('');
-      roomForm.innerHTML = `<option value="">Pilih bilik</option>` + rooms.map(r=>`<option>${escapeHtml(r)}</option>`).join('');
-
-      const catSel = $('category');
-      catSel.innerHTML = `<option value="">Semua</option>` + cats.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
-
-      setDefaultMonth();
+      if (!data?.ok) throw new Error(data?.error || 'Gagal batal');
+      return { updated: data.updated|0 };
     }
-    async function loadAndRender() {
+
+    /* ====== Kod UI: kekalkan dari versi asal, tapi panggil wrapper Supabase di atas ====== */
+    let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false };
+    let ov = { year:null, month:null, days:[], view:'calendar', filterRoom:'' };
+    let ALL_ROOMS = [];
+    let ADMIN_PASSWORD = '';
+
+    window.addEventListener('unhandledrejection', e => { modalClose(); Toast.fire({icon:'error', title: e.reason?.message || 'Ralat tidak dijangka.'}); });
+    window.addEventListener('load', bootstrap);
+
+    async function bootstrap(){
+      const now = new Date();
+      state.year = now.getFullYear(); state.month = now.getMonth()+1;
+      ov.year = now.getFullYear(); ov.month = now.getMonth()+1;
+
+      setupUI();
+
+      modalLoading('Memuat data awal...');
       try{
-        const yyyyMM = $('month').value || new Date().toISOString().slice(0,7);
-        const from = firstDay(yyyyMM);
-        const to   = lastDay(yyyyMM);
-        const room = $('room').value;
-        const cat  = $('category').value;
-
-        let q = supa.from('v_bookings_active')
-          .select('tarikh,masa_mula,masa_tamat,bilik,kategori,tujuan,nama_penempah,sektor')
-          .gte('tarikh', from).lte('tarikh', to)
-          .order('tarikh', { ascending: true })
-          .order('masa_mula', { ascending: true });
-
-        if (room) q = q.eq('bilik', room);
-        if (cat)  q = q.eq('kategori', cat);
-
-        const { data, error } = await q;
-        if (error) throw error;
-
-        renderTable(data || [], { month: yyyyMM, room, cat });
-        window.__rendered = true;
+        const boot = await getInit();
+        ALL_ROOMS = boot.rooms || [];
+        hydrateSelect($('roomSelect'), ['Sila Pilih Bilik', ...ALL_ROOMS], true);
+        hydrateSelect($('category'), boot.categories || []);
+        hydrateSelect($('sektor'), ['— Pilih Sektor —', ...(boot.sektor||[])], true);
+        hydrateSelect($('adminRoom'), ['Sila Pilih Bilik', ...ALL_ROOMS], true);
+        populateOvRoomFilter();
+        lockAdmin();
+        populateNamaOptions();
+        toggleCalendarHint();
+        await loadOverview(true);
+        modalClose();
+        toastOk('Aplikasi sedia digunakan');
       }catch(err){
-        Swal.fire('Ralat', err.message || String(err), 'error');
+        modalClose();
+        modalError('Gagal memuat', err.message);
       }
     }
-    function renderTable(rows, meta){
-      const el = $('app-output');
-      if (!rows.length) {
-        el.innerHTML = `<p class="muted">Tiada rekod untuk penapis semasa.</p>`;
-        return;
-      }
-      const hdr = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><strong>Ringkasan</strong> • Bulan: ${escapeHtml(meta.month)} ${meta.room?`• Bilik: ${escapeHtml(meta.room)}`:''} ${meta.cat?`• Kategori: ${escapeHtml(meta.cat)}`:''}</div>
-          <div class="muted">${rows.length} rekod</div>
-        </div>`;
-      const table = `
-        <table aria-label="Jadual Tempahan">
-          <thead>
-            <tr>
-              <th>Tarikh</th>
-              <th>Masa</th>
-              <th>Bilik</th>
-              <th>Kategori</th>
-              <th>Tujuan</th>
-              <th>Nama</th>
-              <th>Sektor</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(r=>`
-              <tr>
-                <td>${escapeHtml(r.tarikh)}</td>
-                <td>${escapeHtml(r.masa_mula)}–${escapeHtml(r.masa_tamat)}</td>
-                <td>${escapeHtml(r.bilik)}</td>
-                <td>${escapeHtml(r.kategori)}</td>
-                <td>${escapeHtml(r.tujuan || '')}</td>
-                <td>${escapeHtml(r.nama_penempah)}</td>
-                <td>${escapeHtml(r.sektor)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>`;
-      el.innerHTML = hdr + table;
-    }
-    function copyTable() {
-      const table = document.querySelector('#app-output table');
-      if (!table) { Toast.fire({icon:'info', title:'Tiada data untuk disalin'}); return; }
-      const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace(/\t/g,' ')).join('\t')).join('\n');
-      navigator.clipboard.writeText(rows).then(
-        () => Toast.fire({ icon:'success', title:'Disalin ke Clipboard' }),
-        () => Swal.fire('Ralat', 'Gagal menyalin ke Clipboard', 'error')
-      );
-    }
-    function printNow(){
-      if (!window.__rendered) { Toast.fire({icon:'info', title:'Tiada data untuk dicetak'}); return; }
-      setTimeout(()=>window.print(), 50);
-    }
-    $('btnReload').addEventListener('click', loadAndRender);
-    $('btnCopy').addEventListener('click', copyTable);
-    $('btnPrint').addEventListener('click', printNow);
-    $('room').addEventListener('change', loadAndRender);
-    $('category').addEventListener('change', loadAndRender);
-    $('month').addEventListener('change', loadAndRender);
 
-    // Boot
-    (async function boot(){
-      await loadFilters().catch(err => Swal.fire('Ralat', err.message || String(err), 'error'));
-      await loadAndRender();
-    })();
+    /* ====== UI & event handlers (asal) ====== */
+    function hydrateSelect(sel, items, includeFirstAsPlaceholder=false){
+      sel.innerHTML=''; items.forEach((v,i)=> sel.appendChild(new Option(v, includeFirstAsPlaceholder && i===0 ? '' : v)));
+    }
+    function setupUI(){
+      $('monthLabel').textContent = formatMonthLabel(state.year, state.month);
+      $('ovMonthLabel').textContent = formatMonthLabel(ov.year, ov.month);
+
+      $('tabTempahanBtn').addEventListener('click', ()=> switchTab('tempahan'));
+      $('tabKalendarBtn').addEventListener('click', ()=> switchTab('kalendar'));
+      $('tabAdminBtn').addEventListener('click', ()=> switchTab('admin'));
+
+      $('roomSelect').addEventListener('change', onRoomSelectChange);
+      $('btnRefresh').addEventListener('click', ()=>{ resetUI(); toastInfo('Antara muka ditetapkan semula'); });
+      $('btnBook').addEventListener('click', onBook);
+      $('pickedDate').addEventListener('change', onPickedDateChange);
+      $('toggleRangeOff').addEventListener('click', ()=>setRangeMode(false));
+      $('toggleRangeOn').addEventListener('click', ()=>setRangeMode(true));
+      $('fromDate').addEventListener('change', onRangeChange);
+      $('toDate').addEventListener('change', onRangeChange);
+      $('grid').addEventListener('click', onGridClick);
+      $('sektor').addEventListener('change', populateNamaOptions);
+
+      setupMonthNavigator({ stateObj: state, prevBtn:'btnPrev', nextBtn:'btnNext', label:'monthLabel', onShift: ()=>{ if(state.room) refreshMonth(true); } });
+      setupMonthNavigator({ stateObj: ov,    prevBtn:'ovPrev', nextBtn:'ovNext', label:'ovMonthLabel', onShift: ()=> loadOverview(true) });
+
+      $('btnViewCalendar').addEventListener('click', ()=>switchOverviewView('calendar'));
+      $('btnViewTable').addEventListener('click', ()=>switchOverviewView('table'));
+
+      $('ovRoomFilter').addEventListener('change', ()=>{ ov.filterRoom = $('ovRoomFilter').value; renderOvTable(); });
+
+      $('btnAdminLogin').addEventListener('click', onAdminLogin);
+      $('btnAdminLoad').addEventListener('click', loadAdminUpcoming);
+      $('btnBulkCancel').addEventListener('click', onBulkCancel);
+    }
+    function setupMonthNavigator({ stateObj, prevBtn, nextBtn, label, onShift }) {
+      $(prevBtn).addEventListener('click', () => shiftMonth(-1));
+      $(nextBtn).addEventListener('click', () => shiftMonth(1));
+      function shiftMonth(delta) {
+        let y = stateObj.year, m = stateObj.month + delta;
+        if (m < 1) { m = 12; y--; }
+        if (m > 12) { m = 1; y++; }
+        stateObj.year = y; stateObj.month = m;
+        $(label).textContent = formatMonthLabel(y, m);
+        onShift();
+      }
+    }
+    function switchTab(name){
+      const map={tempahan:{btn:'tabTempahanBtn',pane:'tabTempahan'},kalendar:{btn:'tabKalendarBtn',pane:'tabKalendar'},admin:{btn:'tabAdminBtn',pane:'tabAdmin'}};
+      Object.keys(map).forEach(k=>{ const {btn,pane}=map[k]; $(btn).classList.toggle('active',k===name); $(pane).classList.toggle('active',k===name); });
+      if(name==='kalendar' && (!ov.days || !ov.days.length)){ loadOverview(true); }
+    }
+    function lockAdmin(){ state.isAdmin=false; ADMIN_PASSWORD=''; $('adminLoginBox').style.display='block'; $('adminPanel').style.display='none'; $('adminWho').textContent='Belum log masuk'; }
+    function unlockAdmin(){ state.isAdmin=true; $('adminLoginBox').style.display='none'; $('adminPanel').style.display='block'; }
+    function toggleCalendarHint(){ $('noRoomHint').style.display = state.room ? 'none' : 'block'; }
+    function populateNamaOptions(){
+      const sekVal=$('sektor').value, namaSel=$('nama'); namaSel.innerHTML='';
+      const list=NAMA_MENGIKUT_SEKTOR[sekVal];
+      if(!sekVal || !list){ namaSel.appendChild(new Option('— Sila pilih sektor dahulu —','')); namaSel.disabled=true; return; }
+      namaSel.disabled=false; namaSel.appendChild(new Option('— Pilih nama —','')); list.forEach(n=> namaSel.appendChild(new Option(n,n)));
+    }
+    function populateOvRoomFilter(){ const sel=$('ovRoomFilter'); sel.innerHTML='<option value="">— Semua Bilik —</option>'; ALL_ROOMS.forEach(r=> sel.appendChild(new Option(r,r))); }
+
+    function resetUI(){
+      const now=new Date(); state.year=now.getFullYear(); state.month=now.getMonth()+1; $('monthLabel').textContent=formatMonthLabel(state.year,state.month);
+      state.days=[]; $('grid').innerHTML=''; document.querySelectorAll('.tile.sel').forEach(el=>el.classList.remove('sel'));
+      $('roomSelect').value=''; state.room=''; toggleCalendarHint();
+      resetBookingForm(true);
+      $('adminRoom').value=''; $('adminList').innerHTML='';
+      lockAdmin();
+      switchTab('tempahan'); window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function resetBookingForm(clearFields){
+      setRangeMode(false);
+      $('pickedDate').required=true; $('fromDate').required=false; $('toDate').required=false;
+      $('rangeCounter').style.display='none'; $('rangeCounter').textContent='';
+      if (clearFields){
+        ['pickedDate','fromDate','toDate','startTime','endTime','note'].forEach(id => $(id).value='');
+        const sek=$('sektor'); if(sek && sek.options.length) sek.selectedIndex=0;
+        populateNamaOptions();
+      }
+      state.selectedDate=null; state.range={from:null,to:null};
+    }
+    function setRangeMode(on){
+      state.rangeMode=!!on;
+      $('toggleRangeOff').classList.toggle('active',!on);
+      $('toggleRangeOn').classList.toggle('active',on);
+      $('pickedDate').closest('div').style.display = on ? 'none' : 'block';
+      $('fromDateWrap').style.display = on ? 'block' : 'none';
+      $('toDateWrap').style.display = on ? 'block' : 'none';
+      $('rangeCounter').style.display = on ? 'inline-block' : 'none';
+      state.selectedDate=null; $('pickedDate').value='';
+      state.range={from:null,to:null}; $('fromDate').value=''; $('toDate').value='';
+      document.querySelectorAll('#grid .tile.sel').forEach(el=>el.classList.remove('sel'));
+      highlightRangeTiles(); updateRangeCounter();
+    }
+
+    /* ====== Kalendar bilik ====== */
+    function onRoomSelectChange(){ state.room=$('roomSelect').value; resetBookingForm(false); toggleCalendarHint(); if(state.room){ refreshMonth(true); } else { $('grid').innerHTML=''; } }
+    async function refreshMonth(showLoading){
+      if(!state.room){ toggleCalendarHint(); return; }
+      if(showLoading) modalLoading('Memuat kalendar...');
+      try{
+        const res = await getMonthView({ room: state.room, year: state.year, month: state.month });
+        state.days = res.days || [];
+        renderCalendar(); highlightSelectedTile(); highlightRangeTiles(); updateRangeCounter();
+        if(showLoading){ modalClose(); toastOk('Kalendar dikemas kini'); }
+      }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat kalendar', err.message); }
+    }
+    function renderCalendar(){
+      const grid=$('grid'); grid.innerHTML=''; if(state.days.length===0) return;
+      const docFrag=document.createDocumentFragment();
+      const first=state.days[0]; const weekday=(new Date(first.date).getDay()+6)%7; // 0 = Isnin
+      for(let i=0;i<weekday;i++){ const x=document.createElement('div'); x.className='blank'; docFrag.appendChild(x); }
+      for(const dayData of state.days){ docFrag.appendChild(buildTile(dayData)); }
+      grid.appendChild(docFrag);
+    }
+    function buildTile(day){
+      const isWeekend = (new Date(day.date).getDay()===0 || new Date(day.date).getDay()===6);
+      const tile=document.createElement('div');
+      tile.className=`tile ${ (day.isPast||isWeekend) ? 'disabled':'' }`;
+      tile.dataset.date=day.date;
+      const top=document.createElement('div'); top.className='date'; top.textContent=Number(day.date.slice(8,10));
+      if (!day.isPast && !isWeekend) {
+        const statusMap = {red:'Penuh', orange:'Separa Penuh', green:'Tiada tempahan'};
+        const badge=document.createElement('span'); badge.className=`badge ${day.status}`; badge.textContent = statusMap[day.status] || '';
+        top.appendChild(badge);
+      }
+      tile.appendChild(top);
+      const body=document.createElement('div'); body.className='body';
+      if(!day.isPast && !isWeekend){
+        const list=document.createElement('div'); list.className='small';
+        if(day.bookings && day.bookings.length > 0){
+          (day.bookings||[]).forEach(b=>{
+            const p=document.createElement('div');
+            const note=b.note?` • ${String(b.note).slice(0,30)}${b.note.length>30?'…':''}`:'';
+            p.textContent=`${b.start}–${b.end} • ${b.category}${note}`; list.appendChild(p);
+          });
+        } else {
+          const p=document.createElement('div'); p.className='small'; p.textContent='Tiada tempahan.'; list.appendChild(p);
+        }
+        body.appendChild(list);
+      }
+      tile.appendChild(body);
+      return tile;
+    }
+    function onGridClick(ev){
+      const tile = ev.target.closest('.tile'); if(!tile || tile.classList.contains('disabled')) return;
+      const dayData = state.days.find(d => d.date === tile.dataset.date);
+      if (dayData && dayData.status === 'red') { toastWarn('Bilik ini telah penuh pada tarikh tersebut.'); return; }
+      if(state.rangeMode){
+        const clickedDate = tile.dataset.date;
+        if(!state.range.from){ state.range.from = clickedDate; toastInfo('Tarikh mula dipilih'); }
+        else if(!state.range.to){ if(clickedDate < state.range.from){ state.range.to = state.range.from; state.range.from = clickedDate; } else { state.range.to = clickedDate; } toastOk('Julat tarikh ditetapkan'); }
+        else { state.range = {from: clickedDate, to: null}; toastInfo('Pilih tarikh akhir'); }
+        $('fromDate').value = state.range.from || '';
+        $('toDate').value = state.range.to || '';
+        highlightRangeTiles(); updateRangeCounter(); onRangeChange();
+      } else {
+        document.querySelectorAll('#grid .tile.sel').forEach(el=>el.classList.remove('sel'));
+        tile.classList.add('sel');
+        state.selectedDate=tile.dataset.date;
+        $('pickedDate').value=state.selectedDate;
+        toastInfo(`Tarikh dipilih: ${state.selectedDate}`);
+      }
+    }
+    function onPickedDateChange(){
+      state.selectedDate = $('pickedDate').value || null;
+      if (!state.selectedDate) { highlightSelectedTile(); return; }
+      const day = state.days.find(x=>x.date===state.selectedDate);
+      if(day && day.status==='red'){ toastWarn('Tarikh ini penuh. Pilih tarikh lain.'); $('pickedDate').value=''; state.selectedDate=null; }
+      highlightSelectedTile();
+    }
+    function highlightSelectedTile(){
+      document.querySelectorAll('#grid .tile.sel').forEach(el=>el.classList.remove('sel'));
+      if(!state.selectedDate) return;
+      const el=document.querySelector(`#grid .tile[data-date="${state.selectedDate}"]`); if(el) el.classList.add('sel');
+    }
+    function highlightRangeTiles(){
+      document.querySelectorAll('#grid .tile.range').forEach(el=>el.classList.remove('range'));
+      if(!state.range.from || !state.range.to) return;
+      let d = state.range.from;
+      while (d <= state.range.to){
+        const el=document.querySelector(`#grid .tile[data-date="${d}"]`); if(el) el.classList.add('range');
+        d = addDaysYMD(d, 1);
+      }
+    }
+    function onRangeChange(){
+      state.range.from=$('fromDate').value||null; state.range.to=$('toDate').value||null;
+      if(state.range.from && state.range.to && state.range.from > state.range.to){ toastWarn('Tarikh Dari mesti sebelum atau sama dengan Tarikh Hingga'); }
+      highlightRangeTiles(); updateRangeCounter();
+    }
+    function updateRangeCounter(){
+      if(!state.rangeMode){ $('rangeCounter').textContent=''; return;}
+      let d=state.range.from, n=0; if(!state.range.from||!state.range.to){ $('rangeCounter').textContent='Akan ditempah: 0 hari bekerja'; return; }
+      while(d<=state.range.to){ const wk=isWeekendYMD(d); const past=d<todayYMD(); if(!wk && !past) n++; d=addDaysYMD(d,1); }
+      $('rangeCounter').textContent=`Akan ditempah: ${n} hari bekerja`;
+    }
+
+    /* ====== Tempahan ====== */
+    async function onBook(){
+      const inputs = {
+        room: $('roomSelect').value, start: $('startTime').value, end: $('endTime').value,
+        category: $('category').value, note: $('note').value.trim(), nama: $('nama').value.trim(), sektor: $('sektor').value
+      };
+      if(!inputs.room){ markInvalid($('roomSelect')); return toastWarn('Sila pilih bilik'); }
+      if(!inputs.start){ markInvalid($('startTime')); return toastWarn('Sila pilih masa mula'); }
+      if(!inputs.end){ markInvalid($('endTime')); return toastWarn('Sila pilih masa tamat'); }
+      if(!inputs.category){ markInvalid($('category')); return toastWarn('Sila pilih kategori'); }
+      if(!inputs.note){ markInvalid($('note')); return toastWarn('Isi tujuan / ringkasan'); }
+      if(!inputs.sektor){ markInvalid($('sektor')); return toastWarn('Sila pilih sektor'); }
+      if(!inputs.nama){ markInvalid($('nama')); return toastWarn('Sila pilih nama penempah'); }
+
+      const ok = await modalConfirm('Sahkan tempahan?', state.rangeMode ? 'Anda akan merekod tempahan berturut mengikut julat tarikh.' : 'Anda akan merekod satu tempahan pada tarikh dipilih.');
+      if(!ok) return;
+
+      $('btnBook').disabled = true;
+      modalLoading('Menyimpan tempahan...');
+      try {
+        if (state.rangeMode) {
+          inputs.startDate = $('fromDate').value;
+          inputs.endDate = $('toDate').value;
+          if (!inputs.startDate){ modalClose(); markInvalid($('fromDate')); return toastWarn('Isi Tarikh Dari'); }
+          if (!inputs.endDate){ modalClose(); markInvalid($('toDate')); return toastWarn('Isi Tarikh Hingga'); }
+          const res = await createBookingRange(inputs);
+          modalClose(); toastOk(`Disimpan: ${res.savedCount||0} hari`); if(res.skipped?.length) toastInfo(`Diabaikan: ${res.skipped.length} hari tidak sah`);
+        } else {
+          inputs.date = $('pickedDate').value;
+          if (!inputs.date){ modalClose(); markInvalid($('pickedDate')); return toastWarn('Pilih Tarikh Dipilih'); }
+          await createBooking(inputs);
+          modalClose(); toastOk('Tempahan disimpan');
+        }
+        if(state.room) await refreshMonth(false);
+        await loadOverview(false);
+      } catch(err){
+        modalClose(); modalError('Gagal menyimpan', err.message);
+      } finally {
+        $('btnBook').disabled = false;
+      }
+    }
+
+    /* ====== Rumusan (overview) ====== */
+    async function loadOverview(showLoading){
+      try{
+        if(showLoading) modalLoading('Memuat rumusan...');
+        const res = await getMonthRoomsOverview({ year: ov.year, month: ov.month });
+        ov.days = Array.isArray(res.days) ? res.days : [];
+        renderOverview();
+        if(showLoading){ modalClose(); toastOk('Rumusan dikemas kini'); }
+      }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat rumusan', err.message); }
+    }
+    function switchOverviewView(view){
+      ov.view = (view === 'table') ? 'table' : 'calendar';
+      $('btnViewCalendar').classList.toggle('active', ov.view==='calendar');
+      $('btnViewTable').classList.toggle('active', ov.view==='table');
+      $('ovCalendarWrap').style.display = ov.view==='calendar' ? 'block' : 'none';
+      $('ovTableWrap').style.display = ov.view==='table' ? 'block' : 'none';
+      renderOverview();
+    }
+    function renderOverview(){
+      if (ov.view === 'calendar') { renderOvCalendar(); renderOvSummary(); }
+      else { renderOvTable(); }
+    }
+    function renderOvCalendar(){
+      const grid = $('ovGrid'); grid.innerHTML='';
+      const lastDayOfMonth = new Date(ov.year, ov.month, 0).getDate();
+      const firstDow = (new Date(ov.year, ov.month - 1, 1).getDay() + 6) % 7; // 0=Isnin
+      for(let i=0;i<firstDow;i++){ const x=document.createElement('div'); x.className='blank'; grid.appendChild(x); }
+      const dayMap = new Map((ov.days||[]).map(d => [d.date, d]));
+      for(let d=1; d<=lastDayOfMonth; d++){
+        const ymd = `${ov.year}-${pad2(ov.month)}-${pad2(d)}`;
+        const dayData = dayMap.get(ymd);
+        const tile = document.createElement('div'); tile.className = 'tile';
+        const top = document.createElement('div'); top.className='date'; top.textContent = d;
+        if (dayData && (dayData.counts?.red || dayData.counts?.orange)) {
+          const cnt = document.createElement('span'); cnt.className='counts';
+          cnt.textContent = `Penuh:${dayData.counts.red||0} | Separa:${dayData.counts.orange||0}`;
+          top.appendChild(cnt);
+        }
+        tile.appendChild(top);
+        const body = document.createElement('div'); body.className='body';
+        if (dayData?.rooms?.length){
+          const list = document.createElement('div'); list.className='listRooms';
+          dayData.rooms.forEach(it=>{
+            const pill = document.createElement('span'); pill.className = `pill ${it.status}`; pill.textContent = it.room; list.appendChild(pill);
+          });
+          body.appendChild(list);
+        }
+        tile.appendChild(body);
+        grid.appendChild(tile);
+      }
+    }
+    function renderOvSummary(){
+      const list = $('ovSummaryList'); list.innerHTML=''; if(!ALL_ROOMS.length){ $('ovSummaryWrap').style.display='none'; return; }
+      const counter = new Map();
+      (ov.days||[]).forEach(d=> (d.rooms||[]).forEach(r=> counter.set(r.room, (counter.get(r.room)||0) + 1)));
+      const rows = ALL_ROOMS.map(room => [room, counter.get(room)||0]).sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(a[0],'ms'));
+      list.innerHTML = rows.map(([room,c])=> `• ${room} (${c} tempahan)`).join('<br>');
+      $('ovSummaryWrap').style.display='block';
+    }
+    function renderOvTable(){
+      const tbody = $('ovTableBody'); tbody.innerHTML='';
+      const rows = []; (ov.days||[]).forEach(d=>{ (d.rooms||[]).forEach(r=> rows.push({date:d.date, room:r.room, status:r.status})); });
+      const filtered = ov.filterRoom ? rows.filter(r=>r.room===ov.filterRoom) : rows;
+      filtered.sort((a,b)=> a.date.localeCompare(b.date) || (a.status==='red'?-1:1) || a.room.localeCompare(b.room,'ms'));
+      const frag=document.createDocumentFragment();
+      filtered.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${x.date}</td><td>${x.room}</td><td><span class="tag ${x.status==='red'?'red':'orange'}">${x.status==='red'?'Penuh':'Separa Penuh'}</span></td>`; frag.appendChild(tr); });
+      tbody.appendChild(frag);
+    }
+
+    /* ====== Admin ====== */
+    async function onAdminLogin(){
+      const { value: pw } = await Swal.fire({ title:'Kata laluan pentadbir', input:'password', inputPlaceholder:'Masukkan kata laluan', inputAttributes:{autocapitalize:'off',autocorrect:'off'}, confirmButtonText:'Sahkan', showCancelButton:true });
+      if (!pw) return;
+      modalLoading('Mengesahkan akses...');
+      try{
+        const chk = await adminCheck(pw); modalClose();
+        if (chk?.ok) { ADMIN_PASSWORD = pw; unlockAdmin(); toastOk('Akses pentadbir diaktifkan'); }
+        else { Toast.fire({icon:'error', title:'Kata laluan salah'}); }
+      }catch(err){ modalClose(); modalError('Gagal log masuk', err.message); }
+    }
+    async function loadAdminUpcoming(){
+      const room = $('adminRoom').value;
+      if(!state.isAdmin){ return toastWarn('Log masuk pentadbir dahulu'); }
+      if(!room){ $('adminList').innerHTML='<div class="small">Sila pilih bilik untuk memuatkan senarai tempahan akan datang.</div>'; return; }
+      $('adminList').innerHTML='<div class="small">Memuatkan data...</div>';
+      try{
+        const res = await listUpcomingBookings({ room });
+        const items = res.items || [];
+        if(!items.length){ $('adminList').innerHTML='<div class="small">Tiada tempahan akan datang untuk bilik ini.</div>'; return; }
+        const html = ['<table><thead><tr><th style="width:34px"><input type="checkbox" id="chkAll"></th><th style="width:120px">Tarikh</th><th style="width:120px">Masa</th><th>Bilik</th><th style="width:160px">Kategori</th><th>Tujuan</th><th style="width:160px">Penempah</th></tr></thead><tbody>'];
+        for(const it of items){
+          html.push(`<tr>
+            <td><input type="checkbox" class="chkCancel" data-id="${it.id}"></td>
+            <td>${it.date}</td>
+            <td>${(it.start||'')+'–'+(it.end||'')}</td>
+            <td>${it.room||''}</td>
+            <td>${it.category||''}</td>
+            <td>${escapeHtml(it.note||'')}</td>
+            <td>${escapeHtml(it.nama||'')}<div class="small">${it.sektor||''}</div></td>
+          </tr>`);
+        }
+        html.push('</tbody></table>');
+        $('adminList').innerHTML = html.join('');
+        $('chkAll').addEventListener('change', e=> document.querySelectorAll('.chkCancel').forEach(cb=> cb.checked=e.target.checked));
+        toastOk('Senarai dimuat');
+      }catch(err){
+        $('adminList').innerHTML='<div class="small" style="color:#dc2626">Gagal memuatkan data.</div>';
+        modalError('Ralat memuat senarai', err.message);
+      }
+    }
+    async function onBulkCancel(){
+      if(!state.isAdmin){ return toastWarn('Log masuk pentadbir dahulu'); }
+      const checks=[...document.querySelectorAll('.chkCancel:checked')];
+      if(!checks.length) return toastInfo('Tiada tempahan dipilih untuk dibatalkan');
+      const ids = checks.map(x=>x.dataset.id);
+      const { value: reason } = await Swal.fire({ title:'Sebab Pembatalan?', input:'text', inputPlaceholder:'Contoh: Pertindihan acara', showCancelButton:true, inputValidator: v=>!v && 'Sebab pembatalan wajib diisi.' });
+      if (!reason) return;
+      const ok = await modalConfirm('Sahkan pembatalan?', `Anda akan membatalkan ${ids.length} tempahan terpilih.`); if(!ok) return;
+      modalLoading('Melaksanakan pembatalan...');
+      try{
+        const res = await batalTempahanBulk({ ids, reason, adminPassword: ADMIN_PASSWORD });
+        modalClose(); toastOk(`Dibatalkan: ${res.updated} tempahan`);
+        await loadAdminUpcoming(); if(state.room) await refreshMonth(false); await loadOverview(false);
+      }catch(err){ modalClose(); modalError('Gagal membatalkan', err.message); }
+    }
+
+    /* ====== Overview helpers ====== */
+    function renderTableRows(){}
+    function onPickedMonth(){}
   </script>
 </body>
 </html>
