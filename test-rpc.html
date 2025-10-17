@@ -28,7 +28,7 @@
   <div class="wrap">
     <h1>eROM@AG • RPC Smoke Test</h1>
     <div class="card">
-      <p class="muted">Ujian sambungan RPC: <code>fn_admin_check</code> dan <code>fn_create_booking</code>. Kalau ini gagal, jangan mimpi UI besar tu hidup.</p>
+      <p class="muted">Ujian sambungan RPC: <code>fn_admin_check</code> dan <code>fn_create_booking</code>.</p>
       <div class="row">
         <button id="btnCheckAdmin">Uji Admin Check</button>
         <button id="btnCreateSample" class="ghost">Cipta Tempahan Contoh</button>
@@ -44,11 +44,11 @@
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
   </script>
 
-  <!-- Modul: gunakan supabase-js v2 melalui client helper -->
+  <!-- Modul: gunakan supabase-js v2 -->
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // Client minimal untuk ujian ini (supaya tak perlu fail lain)
+    // Client minimal untuk ujian ini
     const supa = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
@@ -61,20 +61,33 @@
       try{
         const { data, error } = await supa.rpc('fn_admin_check', { pw: 'ppdag' });
         if (error) throw error;
-        if (data === true) Toast.fire({ icon:'success', title:'Admin OK' });
-        else Swal.fire('Gagal', 'Admin password salah (default: ppdag)', 'error');
+        data === true
+          ? Toast.fire({ icon:'success', title:'Admin OK' })
+          : Swal.fire('Gagal', 'Admin password salah (default: ppdag)', 'error');
       }catch(err){
         Swal.fire('Ralat', (err && err.message) ? err.message : String(err), 'error');
       }
     });
 
-    // Cipta satu tempahan contoh esok 09:00–10:00
+    // Utiliti: pilih hari bekerja seterusnya (Isnin–Jumaat) dalam zon tempatan
+    function nextWorkingDayISO() {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);              // mula dari esok
+      while ([0,6].includes(d.getDay())) {     // 0=Ahad, 6=Sabtu
+        d.setDate(d.getDate() + 1);
+      }
+      d.setHours(0,0,0,0);
+      // tukar ke ISO YYYY-MM-DD tanpa isu zon
+      return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    }
+
+    // Cipta satu tempahan contoh 09:00–10:00 pada hari bekerja seterusnya
     $('btnCreateSample').addEventListener('click', async () => {
       try{
-        const esok = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+        const ymd = nextWorkingDayISO();
         const args = {
           p_room: 'Bilik Mesyuarat 1',
-          p_date: esok,
+          p_date: ymd,
           p_start: '09:00',
           p_end: '10:00',
           p_category: 'Ujian',
@@ -84,8 +97,11 @@
         };
         const { data, error } = await supa.rpc('fn_create_booking', args);
         if (error) throw error;
-        if (data?.ok) Toast.fire({ icon:'success', title:'Tempahan contoh berjaya' });
-        else Swal.fire('Gagal', data?.error || 'Tidak diketahui', 'error');
+        if (data?.ok) {
+          Toast.fire({ icon:'success', title:`Tempahan contoh berjaya (${ymd})` });
+        } else {
+          Swal.fire('Gagal', data?.error || 'Tidak diketahui', 'error');
+        }
       }catch(err){
         Swal.fire('Ralat', (err && err.message) ? err.message : String(err), 'error');
       }
