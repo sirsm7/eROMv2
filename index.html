@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width" />
   <title>eROM@AG • Tempahan & Paparan</title>
 
-  <!-- Oswald wajib -->
+  <!-- Oswald -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
@@ -117,7 +117,7 @@
         <button id="btnReset" class="ghost" type="button">Kosongkan</button>
       </div>
 
-      <p class="muted" style="margin:8px 0 0">Waktu dibenarkan 08:00–17:00. Tarikh hujung minggu dan tarikh lampau disekat di klien dan juga di server. Aman.</p>
+      <p class="muted" style="margin:8px 0 0">Waktu dibenarkan 08:00–17:00. Tarikh hujung minggu dan tarikh lampau disekat di klien dan juga di server.</p>
     </div>
 
     <!-- PANEL PENAPIS & TINDAKAN PAPARAN -->
@@ -142,35 +142,39 @@
       <p class="muted" style="margin:8px 0 0">Paparan bawah hanya baca-sahaja dari view.</p>
     </div>
 
-    <!-- Paparan utama WAJIB dalam satu DIV -->
+    <!-- Paparan utama -->
     <div id="app-output" class="card"></div>
   </div>
 
-  <!-- Konfigurasi runtime -->
+  <!-- KONFIGURASI RUNTIME (projek anda sekarang) -->
   <script>
     window.SUPABASE_URL = "https://ixnnhsorpyqqxytqaclu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
   </script>
 
+  <!-- LOGIK APLIKASI -->
   <script type="module">
-    import { supa } from './src/api/supabaseClient.js';
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+    /* ===== Supabase client stateless ===== */
+    const supa = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    /* ===== Utiliti asas ===== */
     const $ = (id) => document.getElementById(id);
     const Toast = Swal.mixin({ toast:true, position:'top', timer:2200, showConfirmButton:false, timerProgressBar:true });
 
-    // Utiliti tarikh/masa
     const pad2 = (n)=> String(n).padStart(2,'0');
     const toISO = (d)=> d.toISOString().slice(0,10);
     const firstDay = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); return `${y}-${pad2(m)}-01`; };
-    const lastDay = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); const d=new Date(Date.UTC(y,m,0)); return toISO(d); };
+    const lastDay  = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); const d=new Date(Date.UTC(y,m,0)); return toISO(d); };
     const isWeekend = (d)=> [0,6].includes(new Date(d+'T00:00:00').getDay());
     const isPast = (d)=> new Date(d+'T00:00:00') < new Date(new Date().toDateString());
     const withinBiz = (s,e)=> s >= '08:00' && e <= '17:00' && s < e;
-
-    // XSS guard kecil
     const escapeHtml = (s)=> String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    // ====== BORANG: logik ======
+    /* ===== Borang: kawalan ===== */
     $('f_range').addEventListener('change', (e)=>{
       $('rangeWrap').style.display = e.target.checked ? 'flex' : 'none';
       if (e.target.checked) {
@@ -185,7 +189,6 @@
       const d = new Date(); d.setHours(0,0,0,0);
       return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     }
-
     function readForm(){
       return {
         room: $('f_room').value.trim(),
@@ -201,7 +204,6 @@
         to: $('f_to')?.value
       };
     }
-
     function validateForm(v){
       if (!v.room || !v.category || !v.sektor || !v.nama) return 'Sila lengkapkan semua medan wajib.';
       if (!v.date && !v.isRange) return 'Sila pilih tarikh.';
@@ -214,7 +216,6 @@
       }
       return null;
     }
-
     async function onSubmit(){
       try{
         const v = readForm();
@@ -235,13 +236,12 @@
           Toast.fire({ icon:'success', title:`Disimpan: ${data.savedCount} hari, Diabaikan: ${data.skipped?.length ?? 0}` });
         }
 
-        await loadAndRender(); // refresh jadual
+        await loadAndRender();
         resetForm();
       }catch(err){
         Swal.fire('Ralat', err.message || String(err), 'error');
       }
     }
-
     function resetForm(){
       $('f_category').value = '';
       $('f_sektor').value = '';
@@ -256,13 +256,11 @@
       $('f_to').value = '';
     }
 
-    // ====== PAPARAN: penapis & jadual ======
-    const pad2 = (n)=> String(n).padStart(2,'0');
+    /* ===== Paparan: penapis & jadual ===== */
     function setDefaultMonth(){
       const now = new Date();
       $('month').value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
     }
-
     async function loadFilters() {
       // Ambil bilik & kategori distinct dari view
       const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori').order('bilik');
@@ -279,7 +277,6 @@
 
       setDefaultMonth();
     }
-
     async function loadAndRender() {
       try{
         const yyyyMM = $('month').value || new Date().toISOString().slice(0,7);
@@ -306,7 +303,6 @@
         Swal.fire('Ralat', err.message || String(err), 'error');
       }
     }
-
     function renderTable(rows, meta){
       const el = $('app-output');
       if (!rows.length) {
@@ -346,8 +342,6 @@
         </table>`;
       el.innerHTML = hdr + table;
     }
-
-    // Salin jadual sebagai TSV
     function copyTable() {
       const table = document.querySelector('#app-output table');
       if (!table) { Toast.fire({icon:'info', title:'Tiada data untuk disalin'}); return; }
@@ -357,14 +351,10 @@
         () => Swal.fire('Ralat', 'Gagal menyalin ke Clipboard', 'error')
       );
     }
-
-    // Print selepas DOM siap
     function printNow(){
       if (!window.__rendered) { Toast.fire({icon:'info', title:'Tiada data untuk dicetak'}); return; }
       setTimeout(()=>window.print(), 50);
     }
-
-    // Event handlers Paparan
     $('btnReload').addEventListener('click', loadAndRender);
     $('btnCopy').addEventListener('click', copyTable);
     $('btnPrint').addEventListener('click', printNow);
