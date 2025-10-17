@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>eROM@AG • Paparan Tempahan</title>
+  <title>eROM@AG • Tempahan & Paparan</title>
 
   <!-- Oswald wajib -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,19 +17,25 @@
     :root{--card:#fff;--muted:#6b7280;--border:#e5e7eb;--bg:#f6f8fb;--ink:#111827}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Oswald',Arial,sans-serif}
     .container{max-width:1100px;margin:24px auto;padding:12px}
-    .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr auto auto auto;gap:10px;align-items:end}
+    .grid{display:grid;gap:12px}
+    .two{grid-template-columns:1fr 1fr}
+    .three{grid-template-columns:1fr 1fr 1fr}
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:16px}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr auto auto auto;gap:10px;align-items:end}
     label{font-size:.9rem;color:var(--muted)}
-    select,input[type="month"]{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit}
+    select,input[type="month"],input[type="date"],input[type="time"],input[type="text"]{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit}
+    textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;font-family:inherit;min-height:60px}
     button{padding:10px 14px;border:none;border-radius:12px;font-family:inherit;cursor:pointer}
     .primary{background:#2563eb;color:#fff}
     .ghost{background:#fff;border:1px solid var(--border);color:#111827}
+    .danger{background:#dc2626;color:#fff}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .muted{color:var(--muted)}
     #app-output{margin-top:16px}
     table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;background:#fff}
     thead th{background:#f3f4f6;text-align:left;padding:10px;border-bottom:1px solid var(--border)}
     tbody td{padding:10px;border-top:1px solid var(--border)}
     tbody tr:first-child td{border-top:none}
-    .muted{color:var(--muted)}
     @media print{
       .no-print{display:none !important}
       body{background:#fff}
@@ -40,21 +46,90 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="no-print">eROM@AG • Paparan Tempahan</h1>
+    <h1 class="no-print">eROM@AG • Tempahan & Paparan</h1>
 
+    <!-- BORANG TEMPAHAN BARU -->
+    <div class="card no-print">
+      <h2 style="margin:0 0 10px">Tempahan Baru</h2>
+      <div class="grid three">
+        <div>
+          <label for="f_room">Bilik</label>
+          <select id="f_room"><option value="">Pilih bilik</option></select>
+        </div>
+        <div>
+          <label for="f_category">Kategori</label>
+          <select id="f_category">
+            <option value="">Pilih kategori</option>
+            <option>Mesyuarat</option>
+            <option>Latihan</option>
+            <option>Ujian</option>
+            <option>Taklimat</option>
+          </select>
+        </div>
+        <div>
+          <label for="f_sektor">Sektor</label>
+          <input id="f_sektor" type="text" placeholder="Contoh: Sektor Perancangan" />
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:10px">
+        <div>
+          <label for="f_nama">Nama Penempah</label>
+          <input id="f_nama" type="text" placeholder="Nama penuh" />
+        </div>
+        <div>
+          <label for="f_note">Tujuan</label>
+          <input id="f_note" type="text" placeholder="Tujuan ringkas" />
+        </div>
+      </div>
+
+      <div class="grid three" style="margin-top:10px">
+        <div>
+          <label for="f_date">Tarikh</label>
+          <input id="f_date" type="date" />
+        </div>
+        <div>
+          <label for="f_start">Masa Mula</label>
+          <input id="f_start" type="time" value="09:00" />
+        </div>
+        <div>
+          <label for="f_end">Masa Tamat</label>
+          <input id="f_end" type="time" value="10:00" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px;align-items:center">
+        <label style="display:flex;gap:8px;align-items:center"><input id="f_range" type="checkbox" /> Berturut</label>
+        <div id="rangeWrap" style="display:none" class="row">
+          <div>
+            <label for="f_from" style="display:block;color:var(--muted);font-size:.9rem">Tarikh Dari</label>
+            <input id="f_from" type="date" />
+          </div>
+          <div>
+            <label for="f_to" style="display:block;color:var(--muted);font-size:.9rem">Tarikh Hingga</label>
+            <input id="f_to" type="date" />
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button id="btnSubmit" class="primary">Rekod Tempahan</button>
+        <button id="btnReset" class="ghost" type="button">Kosongkan</button>
+      </div>
+
+      <p class="muted" style="margin:8px 0 0">Waktu dibenarkan 08:00–17:00. Tarikh hujung minggu dan tarikh lampau disekat di klien dan juga di server. Aman.</p>
+    </div>
+
+    <!-- PANEL PENAPIS & TINDAKAN PAPARAN -->
     <div class="card no-print">
       <div class="toolbar">
         <div>
           <label for="room">Bilik</label>
-          <select id="room">
-            <option value="">Semua bilik</option>
-          </select>
+          <select id="room"><option value="">Semua bilik</option></select>
         </div>
         <div>
           <label for="category">Kategori</label>
-          <select id="category">
-            <option value="">Semua</option>
-          </select>
+          <select id="category"><option value="">Semua</option></select>
         </div>
         <div>
           <label for="month">Bulan</label>
@@ -64,14 +139,14 @@
         <button id="btnCopy" class="ghost" title="Salin ke Clipboard">Salin</button>
         <button id="btnPrint" class="ghost" title="Cetak">Cetak</button>
       </div>
-      <p class="muted" style="margin:8px 0 0">Data dibaca dari view baca-sahaja. Tulis/kemaskini akan datang, sabar. Dunia tak musnah kalau tunggu 1 langkah lagi.</p>
+      <p class="muted" style="margin:8px 0 0">Paparan bawah hanya baca-sahaja dari view.</p>
     </div>
 
     <!-- Paparan utama WAJIB dalam satu DIV -->
     <div id="app-output" class="card"></div>
   </div>
 
-  <!-- Konfigurasi runtime: GANTI jika perlu -->
+  <!-- Konfigurasi runtime -->
   <script>
     window.SUPABASE_URL = "https://ixnnhsorpyqqxytqaclu.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bm5oc29ycHlxcXh5dHFhY2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NjEyODYsImV4cCI6MjA3NjIzNzI4Nn0.tNHoxI9-RYk6JEocV5o26o35X-5OaOg1Jb2XTwhtlMQ";
@@ -83,37 +158,126 @@
     const $ = (id) => document.getElementById(id);
     const Toast = Swal.mixin({ toast:true, position:'top', timer:2200, showConfirmButton:false, timerProgressBar:true });
 
-    // Utiliti kecil
+    // Utiliti tarikh/masa
     const pad2 = (n)=> String(n).padStart(2,'0');
     const toISO = (d)=> d.toISOString().slice(0,10);
-    const firstDay = (yyyyMM)=>{
-      const [y,m] = yyyyMM.split('-').map(Number);
-      return `${y}-${pad2(m)}-01`;
-    };
-    const lastDay = (yyyyMM)=>{
-      const [y,m] = yyyyMM.split('-').map(Number);
-      const d = new Date(Date.UTC(y, m, 0)); // hari terakhir bulan
-      return toISO(d);
-    };
+    const firstDay = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); return `${y}-${pad2(m)}-01`; };
+    const lastDay = (yyyyMM)=>{ const [y,m]=yyyyMM.split('-').map(Number); const d=new Date(Date.UTC(y,m,0)); return toISO(d); };
+    const isWeekend = (d)=> [0,6].includes(new Date(d+'T00:00:00').getDay());
+    const isPast = (d)=> new Date(d+'T00:00:00') < new Date(new Date().toDateString());
+    const withinBiz = (s,e)=> s >= '08:00' && e <= '17:00' && s < e;
+
+    // XSS guard kecil
+    const escapeHtml = (s)=> String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+    // ====== BORANG: logik ======
+    $('f_range').addEventListener('change', (e)=>{
+      $('rangeWrap').style.display = e.target.checked ? 'flex' : 'none';
+      if (e.target.checked) {
+        $('f_from').value = $('f_date').value || todayISO();
+        $('f_to').value   = $('f_date').value || todayISO();
+      }
+    });
+    $('btnReset').addEventListener('click', resetForm);
+    $('btnSubmit').addEventListener('click', onSubmit);
+
+    function todayISO(){
+      const d = new Date(); d.setHours(0,0,0,0);
+      return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    }
+
+    function readForm(){
+      return {
+        room: $('f_room').value.trim(),
+        category: $('f_category').value.trim(),
+        sektor: $('f_sektor').value.trim(),
+        nama: $('f_nama').value.trim(),
+        note: $('f_note').value.trim(),
+        date: $('f_date').value,
+        start: $('f_start').value,
+        end: $('f_end').value,
+        isRange: $('f_range').checked,
+        from: $('f_from')?.value,
+        to: $('f_to')?.value
+      };
+    }
+
+    function validateForm(v){
+      if (!v.room || !v.category || !v.sektor || !v.nama) return 'Sila lengkapkan semua medan wajib.';
+      if (!v.date && !v.isRange) return 'Sila pilih tarikh.';
+      if (!withinBiz(v.start, v.end)) return 'Waktu mesti antara 08:00–17:00 dan sah.';
+      if (v.isRange) {
+        if (!v.from || !v.to) return 'Sila pilih Tarikh Dari dan Hingga.';
+        if (v.from > v.to) return 'Tarikh Dari melebihi Tarikh Hingga.';
+      } else {
+        if (isPast(v.date) || isWeekend(v.date)) return 'Tarikh hujung minggu atau lampau tidak dibenarkan.';
+      }
+      return null;
+    }
+
+    async function onSubmit(){
+      try{
+        const v = readForm();
+        const err = validateForm(v);
+        if (err) { Swal.fire('Gagal', err, 'error'); return; }
+
+        if (!v.isRange) {
+          const args = { p_room:v.room, p_date:v.date, p_start:v.start, p_end:v.end, p_category:v.category, p_note:v.note, p_sektor:v.sektor, p_nama:v.nama };
+          const { data, error } = await supa.rpc('fn_create_booking', args);
+          if (error) throw error;
+          if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan');
+          Toast.fire({ icon:'success', title:'Tempahan disimpan' });
+        } else {
+          const args = { p_room:v.room, p_start_date:v.from, p_end_date:v.to, p_start:v.start, p_end:v.end, p_category:v.category, p_note:v.note, p_sektor:v.sektor, p_nama:v.nama };
+          const { data, error } = await supa.rpc('fn_create_booking_range', args);
+          if (error) throw error;
+          if (!data?.ok) throw new Error(data?.error || 'Gagal menyimpan range');
+          Toast.fire({ icon:'success', title:`Disimpan: ${data.savedCount} hari, Diabaikan: ${data.skipped?.length ?? 0}` });
+        }
+
+        await loadAndRender(); // refresh jadual
+        resetForm();
+      }catch(err){
+        Swal.fire('Ralat', err.message || String(err), 'error');
+      }
+    }
+
+    function resetForm(){
+      $('f_category').value = '';
+      $('f_sektor').value = '';
+      $('f_nama').value = '';
+      $('f_note').value = '';
+      $('f_date').value = '';
+      $('f_start').value = '09:00';
+      $('f_end').value = '10:00';
+      $('f_range').checked = false;
+      $('rangeWrap').style.display = 'none';
+      $('f_from').value = '';
+      $('f_to').value = '';
+    }
+
+    // ====== PAPARAN: penapis & jadual ======
+    const pad2 = (n)=> String(n).padStart(2,'0');
+    function setDefaultMonth(){
+      const now = new Date();
+      $('month').value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
+    }
 
     async function loadFilters() {
       // Ambil bilik & kategori distinct dari view
-      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori').order('bilik', { ascending: true });
+      const { data, error } = await supa.from('v_bookings_active').select('bilik,kategori').order('bilik');
       if (error) throw error;
       const rooms = [...new Set((data||[]).map(x=>x.bilik).filter(Boolean))];
       const cats  = [...new Set((data||[]).map(x=>x.kategori).filter(Boolean))];
 
-      // Isi dropdown bilik
-      const roomSel = $('room');
+      const roomSel = $('room'); const roomForm = $('f_room');
       roomSel.innerHTML = `<option value="">Semua bilik</option>` + rooms.map(r=>`<option>${escapeHtml(r)}</option>`).join('');
+      roomForm.innerHTML = `<option value="">Pilih bilik</option>` + rooms.map(r=>`<option>${escapeHtml(r)}</option>`).join('');
 
-      // Isi dropdown kategori
       const catSel = $('category');
       catSel.innerHTML = `<option value="">Semua</option>` + cats.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
 
-      // Set default input month = bulan semasa
-      const now = new Date();
-      $('month').value = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
+      setDefaultMonth();
     }
 
     async function loadAndRender() {
@@ -137,7 +301,6 @@
         if (error) throw error;
 
         renderTable(data || [], { month: yyyyMM, room, cat });
-        // selesai inject DOM → butang Cetak akan guna ini
         window.__rendered = true;
       }catch(err){
         Swal.fire('Ralat', err.message || String(err), 'error');
@@ -154,8 +317,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div><strong>Ringkasan</strong> • Bulan: ${escapeHtml(meta.month)} ${meta.room?`• Bilik: ${escapeHtml(meta.room)}`:''} ${meta.cat?`• Kategori: ${escapeHtml(meta.cat)}`:''}</div>
           <div class="muted">${rows.length} rekod</div>
-        </div>
-      `;
+        </div>`;
       const table = `
         <table aria-label="Jadual Tempahan">
           <thead>
@@ -179,11 +341,9 @@
                 <td>${escapeHtml(r.tujuan || '')}</td>
                 <td>${escapeHtml(r.nama_penempah)}</td>
                 <td>${escapeHtml(r.sektor)}</td>
-              </tr>
-            `).join('')}
+              </tr>`).join('')}
           </tbody>
-        </table>
-      `;
+        </table>`;
       el.innerHTML = hdr + table;
     }
 
@@ -204,12 +364,7 @@
       setTimeout(()=>window.print(), 50);
     }
 
-    // XSS guard kecil
-    function escapeHtml(s){
-      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
-
-    // Event handlers
+    // Event handlers Paparan
     $('btnReload').addEventListener('click', loadAndRender);
     $('btnCopy').addEventListener('click', copyTable);
     $('btnPrint').addEventListener('click', printNow);
