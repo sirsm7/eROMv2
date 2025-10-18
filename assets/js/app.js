@@ -1,7 +1,11 @@
 // assets/js/app.js
 import { supa } from "../../src/api/supabaseClient.js";
 
-/* ========= Konstanta bilik & kategori (fixed ikut arahan) ========= */
+/* ========= Tetapan paparan ========= */
+// Set kepada true kalau nak sorok jubin hari lepas dalam kalendar bilik
+const SHOW_PAST_DAYS = false;
+
+/* ========= Konstanta bilik & kategori ========= */
 const ROOM_OPTIONS = [
   "PKG Ganun - Bilik Kursus (30 orang)",
   "PKG Melekek - Bilik Kuliah 1 (20 orang)",
@@ -17,11 +21,7 @@ const ROOM_OPTIONS = [
   "Bilik Runding Cara PPDAG (4 orang)",
   "Kafeteria PPDAG (30 orang)"
 ];
-const CATEGORY_OPTIONS = [
-  "Mesyuarat / Taklimat",
-  "Bengkel / Kursus",
-  "Lain-Lain"
-];
+const CATEGORY_OPTIONS = ["Mesyuarat / Taklimat","Bengkel / Kursus","Lain-Lain"];
 
 /* ========= Sektor -> Nama ========= */
 const NAMA_MENGIKUT_SEKTOR = {
@@ -36,7 +36,7 @@ const NAMA_MENGIKUT_SEKTOR = {
   "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","Pn. Habsah Binti Maidin","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","En. Azharul Nizam Bin Othmawi","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
 };
 
-/* ========= Utiliti & SweetAlert ========= */
+/* ========= Utiliti ========= */
 const Toast = Swal.mixin({ toast:true, position:'top', showConfirmButton:false, timer:2200, timerProgressBar:true });
 const $ = id => document.getElementById(id);
 const pad2 = n => String(n).padStart(2,'0');
@@ -45,6 +45,8 @@ const toYMD = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate(
 const firstDay = (y,m)=> `${y}-${pad2(m)}-01`;
 const lastDay  = (y,m)=> toYMD(new Date(Date.UTC(y,m,0)));
 const todayYMD = ()=> toYMD(new Date());
+const toMinutes = t => { if(!t) return 0; const [h,m]=String(t).slice(0,5).split(':').map(Number); return (h*60)+(m||0); };
+const diffHours = (start,end)=> (toMinutes(end)-toMinutes(start))/60;
 function toastOk(t){Toast.fire({icon:'success',title:t});}
 function toastInfo(t){Toast.fire({icon:'info',title:t});}
 function toastWarn(t){Toast.fire({icon:'warning',title:t});}
@@ -53,32 +55,18 @@ function modalClose(){ Swal.close(); }
 function modalError(title, text){ Swal.fire(title||'Ralat', text||'Terjadi ralat yang tidak dijangka.', 'error'); }
 async function modalConfirm(title, text){ const r=await Swal.fire({ title, text, icon:'question', showCancelButton:true, confirmButtonText:'Teruskan', cancelButtonText:'Batal' }); return r.isConfirmed; }
 function markInvalid(el){ el.classList.add('invalid'); setTimeout(()=>el.classList.remove('invalid'), 1200); el.focus(); }
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-}
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function addDaysYMD(ymd,n){ const [y,m,d]=ymd.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return toYMD(dt); }
 
-/* ========= Keadaan UI ========= */
+/* ========= State ========= */
 let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false };
 let ov = { year:null, month:null, days:[], view:'calendar', filterRoom:'' };
 let ADMIN_PASSWORD = '';
 
-/* ========= API wrapper (Supabase) ========= */
+/* ========= API ========= */
 async function getInit(){
-  const rooms = [...ROOM_OPTIONS];
-  const categories = [...CATEGORY_OPTIONS];
-  const sektor = Object.keys(NAMA_MENGIKUT_SEKTOR);
-  return { rooms, categories, sektor };
+  return { rooms:[...ROOM_OPTIONS], categories:[...CATEGORY_OPTIONS], sektor:Object.keys(NAMA_MENGIKUT_SEKTOR) };
 }
-
-// Kira beza jam dari "HH:MM" -> number jam
-function diffHours(hhmmStart, hhmmEnd){
-  const [hs,ms] = hhmmStart.split(':').map(Number);
-  const [he,me] = hhmmEnd.split(':').map(Number);
-  const s = hs*60+ms, e = he*60+me;
-  return Math.max(0, (e - s) / 60);
-}
-
 async function getMonthView({ room, year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -86,19 +74,14 @@ async function getMonthView({ room, year, month }){
     .select('tarikh, masa_mula, masa_tamat, kategori, tujuan')
     .eq('bilik', room)
     .gte('tarikh', from).lte('tarikh', to)
-    .order('tarikh', { ascending:true }).order('masa_mula', { ascending:true });
+    .order('tarikh',{ascending:true})
+    .order('masa_mula',{ascending:true});
   if (error) throw error;
 
   const byDate = new Map();
   (data||[]).forEach(r=>{
     const list = byDate.get(r.tarikh) || [];
-    list.push({
-      start: r.masa_mula,
-      end: r.masa_tamat,
-      category: r.kategori,
-      note: r.tujuan || '',
-      hours: diffHours(r.masa_mula, r.masa_tamat)
-    });
+    list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
     byDate.set(r.tarikh, list);
   });
 
@@ -107,46 +90,51 @@ async function getMonthView({ room, year, month }){
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
     const bookings = byDate.get(ymd) || [];
-
-    // LOGIK BARU: jika ada tempahan ≥ 6 jam => PENUH
-    const hasLong = bookings.some(b => b.hours >= 6);
     const count = bookings.length;
-    const status = hasLong ? 'red' : (count===0 ? 'green' : (count>=6 ? 'red' : 'orange'));
-
-    days.push({ date: ymd, weekday: (new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
+    const status = count===0 ? 'green' : (count>=6 ? 'red' : 'orange');
+    days.push({ date: ymd, weekday:(new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
   }
   return { days };
 }
 
-async function getMonthRoomsOverview({ year, month }){
+// ====== PEMBETULAN LOGIK 6 JAM (Rumusan) ======
+async function getMonthRoomsOverview({ year, month }) {
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
     .from('v_bookings_active')
-    .select('tarikh,bilik')
+    .select('tarikh,bilik,masa_mula,masa_tamat')
     .gte('tarikh', from).lte('tarikh', to);
   if (error) throw error;
 
-  const map = new Map();
-  const perRoomPerDay = new Map(); // "date|room" -> count
-  (data||[]).forEach(r=>{
+  // Kumpul per (date|room): count & flag ada tempahan >= 6 jam
+  const perRoomPerDay = new Map(); // key -> {count, hasLong}
+  (data || []).forEach(r => {
     const key = `${r.tarikh}|${r.bilik}`;
-    perRoomPerDay.set(key, (perRoomPerDay.get(key)||0) + 1);
+    const cur = perRoomPerDay.get(key) || { count: 0, hasLong: false };
+    cur.count += 1;
+    if (diffHours(r.masa_mula, r.masa_tamat) >= 6) cur.hasLong = true;
+    perRoomPerDay.set(key, cur);
   });
+
+  // Sediakan hari
+  const daysMap = new Map();
   const last = Number(to.slice(-2));
-  for(let d=1; d<=last; d++){
+  for (let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
-    const rooms = [];
-    let red=0, orange=0;
-    perRoomPerDay.forEach((cnt, key)=>{
-      const [date, room] = key.split('|');
-      if (date !== ymd) return;
-      const status = cnt>=6 ? 'red' : 'orange';
-      if (status==='red') red++; else orange++;
-      rooms.push({ room, status });
-    });
-    map.set(ymd, { rooms, counts:{red,orange}, date: ymd });
+    daysMap.set(ymd, { date: ymd, rooms: [], counts: { red: 0, orange: 0 } });
   }
-  return { days: [...map.values()] };
+
+  // Status: ada tempahan >=6 jam -> red; else count>=6 -> red; else orange
+  perRoomPerDay.forEach((val, key) => {
+    const [date, room] = key.split('|');
+    const day = daysMap.get(date);
+    if (!day) return;
+    const status = val.hasLong ? 'red' : (val.count >= 6 ? 'red' : 'orange');
+    day.rooms.push({ room, status });
+    if (status === 'red') day.counts.red++; else day.counts.orange++;
+  });
+
+  return { days: [...daysMap.values()] };
 }
 
 async function adminCheck(pw){
@@ -185,8 +173,8 @@ async function listUpcomingBookings({ room }){
   if (error) throw error;
   return {
     items: (data||[]).map(r=>({
-      id: r.booking_id, date: r.tarikh, start: r.masa_mula, end: r.masa_tamat,
-      room: r.bilik, category: r.kategori, note: r.tujuan, nama: r.nama_penempah, sektor: r.sektor
+      id:r.booking_id, date:r.tarikh, start:r.masa_mula, end:r.masa_tamat,
+      room:r.bilik, category:r.kategori, note:r.tujuan, nama:r.nama_penempah, sektor:r.sektor
     }))
   };
 }
@@ -199,8 +187,8 @@ async function batalTempahanBulk({ ids, reason, adminPassword }){
   return { updated: data.updated|0 };
 }
 
-/* ========= Bootstrapping ========= */
-window.addEventListener('unhandledrejection', e => { modalClose(); Toast.fire({icon:'error', title: e.reason?.message || 'Ralat tidak dijangka.'}); });
+/* ========= Bootstrap ========= */
+window.addEventListener('unhandledrejection', e => { modalClose(); Toast.fire({icon:'error', title:e.reason?.message || 'Ralat tidak dijangka.'}); });
 window.addEventListener('load', bootstrap);
 
 async function bootstrap(){
@@ -335,44 +323,24 @@ async function refreshMonth(showLoading){
   try{
     const res = await getMonthView({ room: state.room, year: state.year, month: state.month });
     state.days = res.days || [];
-    renderCalendar();
+    renderCalendar(); highlightSelectedTile(); highlightRangeTiles(); updateRangeCounter();
     if(showLoading){ modalClose(); toastOk('Kalendar dikemas kini'); }
   }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat kalendar', err.message); }
 }
-
-// >>>>>>> HANYA nampak hari ini dan ke depan
 function renderCalendar(){
-  const grid = $('grid');
-  grid.innerHTML = '';
-  if (!state.days.length) return;
+  const grid=$('grid'); grid.innerHTML=''; if(state.days.length===0) return;
 
-  const today = todayYMD();
+  // tapis jika perlu: hanya hari semasa & akan datang
+  const days = SHOW_PAST_DAYS ? state.days : state.days.filter(d=>!d.isPast);
 
-  // Mula render dari hari pertama yang >= hari ini
-  const startIdx = state.days.findIndex(d => d.date >= today);
-  if (startIdx === -1) return; // tiada baki hari bulan ini
+  if (days.length === 0) { grid.innerHTML='<div class="small" style="padding:1rem">Tiada hari untuk dipaparkan.</div>'; return; }
 
-  const daysToRender = state.days.slice(startIdx);
-
-  // Offset ikut hari pertama yang dirender
-  const firstDayToRender = daysToRender[0];
-  const weekdayOffset = (new Date(firstDayToRender.date).getDay() + 6) % 7; // 0=Isnin
-
-  const docFrag = document.createDocumentFragment();
-  for(let i=0;i<weekdayOffset;i++){
-    const x=document.createElement('div');
-    x.className='blank';
-    docFrag.appendChild(x);
-  }
-  for(const dayData of daysToRender){
-    docFrag.appendChild(buildTile(dayData));
-  }
+  const docFrag=document.createDocumentFragment();
+  const first=days[0]; const weekday=(new Date(first.date).getDay()+6)%7; // 0 = Isnin
+  for(let i=0;i<weekday;i++){ const x=document.createElement('div'); x.className='blank'; docFrag.appendChild(x); }
+  for(const dayData of days){ docFrag.appendChild(buildTile(dayData)); }
   grid.appendChild(docFrag);
-
-  if (state.selectedDate && state.selectedDate < today) state.selectedDate = null;
-  highlightSelectedTile(); highlightRangeTiles(); updateRangeCounter();
 }
-
 function buildTile(day){
   const isWeekend = (new Date(day.date).getDay()===0 || new Date(day.date).getDay()===6);
   const tile=document.createElement('div');
@@ -402,7 +370,6 @@ function buildTile(day){
   tile.appendChild(body);
   return tile;
 }
-
 function onGridClick(ev){
   const tile = ev.target.closest('.tile'); if(!tile || tile.classList.contains('disabled')) return;
   const dayData = state.days.find(d => d.date === tile.dataset.date);
