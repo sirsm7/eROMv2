@@ -70,6 +70,8 @@ async function getInit(){
   const sektor = Object.keys(NAMA_MENGIKUT_SEKTOR);
   return { rooms, categories, sektor };
 }
+
+/* ====== [6 JAM] GANTI: getMonthView — “Penuh” jika ada slot ≥ 6 jam ====== */
 async function getMonthView({ room, year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -87,40 +89,53 @@ async function getMonthView({ room, year, month }){
     byDate.set(r.tarikh, list);
   });
 
+  const mins = (t)=>{ const [h,m]=String(t).split(':').map(Number); return h*60+m; };
+
   const days = [];
   const last = Number(to.slice(-2));
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
     const bookings = byDate.get(ymd) || [];
-    const count = bookings.length;
-    const status = count===0 ? 'green' : (count>=6 ? 'red' : 'orange');
+
+    // penuh jika ada mana-mana booking ≥ 360 minit
+    const hasLong = bookings.some(b => (mins(b.end) - mins(b.start)) >= 360);
+    const status = bookings.length === 0 ? 'green' : (hasLong ? 'red' : 'orange');
+
     days.push({ date: ymd, weekday: (new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
   }
   return { days };
 }
+
+/* ====== [6 JAM] GANTI: getMonthRoomsOverview — kira merah ikut slot ≥ 6 jam ====== */
 async function getMonthRoomsOverview({ year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
     .from('v_bookings_active')
-    .select('tarikh,bilik')
+    .select('tarikh,bilik,masa_mula,masa_tamat')   // perlu masa untuk kira 6 jam
     .gte('tarikh', from).lte('tarikh', to);
   if (error) throw error;
 
-  const map = new Map();
-  const perRoomPerDay = new Map(); // "date|room" -> count
+  const mins = (t)=>{ const [h,m]=String(t).split(':').map(Number); return h*60+m; };
+
+  // "date|room" -> status ('red' jika ada mana-mana tempahan >=6 jam, selain itu 'orange')
+  const perRoomPerDay = new Map();
   (data||[]).forEach(r=>{
     const key = `${r.tarikh}|${r.bilik}`;
-    perRoomPerDay.set(key, (perRoomPerDay.get(key)||0) + 1);
+    const long = (mins(r.masa_tamat) - mins(r.masa_mula)) >= 360;
+    const prev = perRoomPerDay.get(key);
+    const next = prev === 'red' ? 'red' : (long ? 'red' : 'orange');
+    perRoomPerDay.set(key, next);
   });
+
+  const map = new Map();
   const last = Number(to.slice(-2));
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
     const rooms = [];
     let red=0, orange=0;
-    perRoomPerDay.forEach((cnt, key)=>{
+    perRoomPerDay.forEach((status, key)=>{
       const [date, room] = key.split('|');
       if (date !== ymd) return;
-      const status = cnt>=6 ? 'red' : 'orange';
       if (status==='red') red++; else orange++;
       rooms.push({ room, status });
     });
@@ -128,6 +143,7 @@ async function getMonthRoomsOverview({ year, month }){
   }
   return { days: [...map.values()] };
 }
+
 async function adminCheck(pw){
   const { data, error } = await supa.rpc('fn_admin_check', { pw });
   if (error) throw error;
