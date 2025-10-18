@@ -2,7 +2,7 @@
 import { supa } from "../../src/api/supabaseClient.js";
 
 /* ========= Tetapan paparan ========= */
-// Set kepada true kalau nak sorok jubin hari lepas dalam kalendar bilik
+// true = sembunyi jubin tarikh lampau pada kalendar bilik
 const SHOW_PAST_DAYS = false;
 
 /* ========= Konstanta bilik & kategori ========= */
@@ -67,6 +67,8 @@ let ADMIN_PASSWORD = '';
 async function getInit(){
   return { rooms:[...ROOM_OPTIONS], categories:[...CATEGORY_OPTIONS], sektor:Object.keys(NAMA_MENGIKUT_SEKTOR) };
 }
+
+/* ===== Kalendar bilik (Tempahan) — status ikut 6 jam ===== */
 async function getMonthView({ room, year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -78,26 +80,29 @@ async function getMonthView({ room, year, month }){
     .order('masa_mula',{ascending:true});
   if (error) throw error;
 
-  const byDate = new Map();
+  // bina indeks harian
+  const byDate = new Map(); // tarikh -> { list:[], count, hasLong }
   (data||[]).forEach(r=>{
-    const list = byDate.get(r.tarikh) || [];
-    list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
-    byDate.set(r.tarikh, list);
+    const cur = byDate.get(r.tarikh) || { list:[], count:0, hasLong:false };
+    cur.list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
+    cur.count += 1;
+    if (diffHours(r.masa_mula, r.masa_tamat) >= 6) cur.hasLong = true;
+    byDate.set(r.tarikh, cur);
   });
 
   const days = [];
   const last = Number(to.slice(-2));
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
-    const bookings = byDate.get(ymd) || [];
-    const count = bookings.length;
-    const status = count===0 ? 'green' : (count>=6 ? 'red' : 'orange');
-    days.push({ date: ymd, weekday:(new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
+    const dayInfo = byDate.get(ymd) || { list:[], count:0, hasLong:false };
+    // LOGIK 6 JAM: jika ada mana-mana tempahan >=6 jam => PENUH
+    const status = dayInfo.hasLong ? 'red' : (dayInfo.count===0 ? 'green' : (dayInfo.count>=6 ? 'red' : 'orange'));
+    days.push({ date: ymd, weekday:(new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings: dayInfo.list });
   }
   return { days };
 }
 
-// ====== PEMBETULAN LOGIK 6 JAM (Rumusan) ======
+/* ===== Rumusan semua bilik — status ikut 6 jam ===== */
 async function getMonthRoomsOverview({ year, month }) {
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -106,8 +111,8 @@ async function getMonthRoomsOverview({ year, month }) {
     .gte('tarikh', from).lte('tarikh', to);
   if (error) throw error;
 
-  // Kumpul per (date|room): count & flag ada tempahan >= 6 jam
-  const perRoomPerDay = new Map(); // key -> {count, hasLong}
+  // (date|room) -> {count, hasLong}
+  const perRoomPerDay = new Map();
   (data || []).forEach(r => {
     const key = `${r.tarikh}|${r.bilik}`;
     const cur = perRoomPerDay.get(key) || { count: 0, hasLong: false };
@@ -116,7 +121,7 @@ async function getMonthRoomsOverview({ year, month }) {
     perRoomPerDay.set(key, cur);
   });
 
-  // Sediakan hari
+  // rangka hari
   const daysMap = new Map();
   const last = Number(to.slice(-2));
   for (let d=1; d<=last; d++){
@@ -124,7 +129,7 @@ async function getMonthRoomsOverview({ year, month }) {
     daysMap.set(ymd, { date: ymd, rooms: [], counts: { red: 0, orange: 0 } });
   }
 
-  // Status: ada tempahan >=6 jam -> red; else count>=6 -> red; else orange
+  // status: hasLong -> red; else count>=6 -> red; else orange
   perRoomPerDay.forEach((val, key) => {
     const [date, room] = key.split('|');
     const day = daysMap.get(date);
@@ -330,9 +335,7 @@ async function refreshMonth(showLoading){
 function renderCalendar(){
   const grid=$('grid'); grid.innerHTML=''; if(state.days.length===0) return;
 
-  // tapis jika perlu: hanya hari semasa & akan datang
   const days = SHOW_PAST_DAYS ? state.days : state.days.filter(d=>!d.isPast);
-
   if (days.length === 0) { grid.innerHTML='<div class="small" style="padding:1rem">Tiada hari untuk dipaparkan.</div>'; return; }
 
   const docFrag=document.createDocumentFragment();
@@ -428,7 +431,7 @@ function updateRangeCounter(){
   $('rangeCounter').textContent=`Akan ditempah: ${n} hari bekerja`;
 }
 
-/* ========= Tempahan ========= */
+/* ========= Simpan tempahan ========= */
 async function onBook(){
   const inputs = {
     room: $('roomSelect').value, start: $('startTime').value, end: $('endTime').value,
