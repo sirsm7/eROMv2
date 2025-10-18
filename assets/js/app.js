@@ -23,17 +23,17 @@ const CATEGORY_OPTIONS = [
   "Lain-Lain"
 ];
 
-/* ========= Sektor -> Nama (kekalkan dari versi sebelumnya) ========= */
+/* ========= Sektor -> Nama ========= */
 const NAMA_MENGIKUT_SEKTOR = {
   "Pengurusan Tertinggi": ["Tuan Haji Ab Malek Bin Kasim (B.K.T)","En. Azhar Bin Md Nor (B.C.M)","En. Abd Jabar Bin Md Yusup (P.J.K)","En. Muhammad Hamka Bin Dollah","En. Bashir Bin Abu Bakar"],
   "School Improvement Partner (SIP+)": ["En. Amran Bin Abdul Sukor","En. Abd. Razak Bin Adam","Pn. Rafidah Binti Abd Rahim"],
   "Sektor Perancangan": ["En. Saifullah Bin Abdul Wahab","En. Hairoldin Rahim Bin Taya"],
   "Sektor Pembelajaran": ["En. Hairuljaki Bin Omar","Pn. Zuraini Binti Bakri","Ustazah Pauziah Binti Othman","En. Razman Bin Mohammad","En. Mohd Anis Bin Abdul Majid","Pn. Norasiah Binti Ahmad","Pn. Wan Norhayati Binti Wan Ibrahim","Pn. Sabiah Binti Ninggal","Pn. Puteri Hanizah Binti Megat Amaddin","Pn. Khairul Bariah Binti Ismail","Pn. Rohana Binti Jantan","En. Fakrul Izhar Bin Ramlee","Ustaz Mahadi Bin Suboh","Ustaz Kamarul Zaman Bin Sahat","En. Mohd Shahril Amri B. Mohamed Shahar","En. Mohd Eirwan Bin Halim","Pn. Mariyam Binti Ahmad","En. Wan Norarif Bin Wan Muhammad","Pn. Nor Jamilahton Holija'ah Bt Ariffin","En. Munzir Bin Md Rosnan","En. Mohd Rizal Bin Maslah","Pn. Faezah Binti Ali","En. Mohd Izwan Bin Othman","En. Mohd Kamarul Hafiz Bin Abdul Rashid","En. Malik Abdullah Bin Adanan","Pn. Mas Azahwati Binti Ab Aziz"],
   "Sektor Pengurusan Sekolah": ["Pn. Addelennoor Binti Abu","Pn. Siti Noorus Sa'adah Binti Md Ramli","En. Muhammad Hafiz Bin Hamdan","En. Mazli Bin Malek","En. Kadin Bin Abu @ Sim Ah Tong","En. Nor Afandi Bin Safar","En. Adnan Bin Isenin","Pn. Kavitha A/P Kannan","Pn. Irmadila Binti Mat Ismail","Pn. Masayu Binti Kari"],
-  "Sektor Pembangunan Murid": ["En. Ismail Asib Bin Md Amin","En. Mohammad Misbahuddin Bin Abu Mansor"],
+  "Sektor Pembangunan Murid": ["En. Wan Mohd Syarifuddin Bin Wan Hasan","En. Ismail Asib Bin Md Amin","En. Mohammad Misbahuddin Bin Abu Mansor"],
   "Sektor Pentaksiran & Peperiksaan": ["En. Mohd Rahdi Bin Ahmad","En. Zaidi Bin Jaafar"],
   "Psikologi & Kaunseling": ["En. Mohd Saberi Bin Minhat @ Bulat"],
-  "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
+  "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","Pn. Habsah Binti Maidin","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","En. Azharul Nizam Bin Othmawi","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
 };
 
 /* ========= Utiliti & SweetAlert ========= */
@@ -71,7 +71,14 @@ async function getInit(){
   return { rooms, categories, sektor };
 }
 
-/* ====== [6 JAM] GANTI: getMonthView — “Penuh” jika ada slot ≥ 6 jam ====== */
+// Kira beza jam dari "HH:MM" -> number jam
+function diffHours(hhmmStart, hhmmEnd){
+  const [hs,ms] = hhmmStart.split(':').map(Number);
+  const [he,me] = hhmmEnd.split(':').map(Number);
+  const s = hs*60+ms, e = he*60+me;
+  return Math.max(0, (e - s) / 60);
+}
+
 async function getMonthView({ room, year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -85,11 +92,15 @@ async function getMonthView({ room, year, month }){
   const byDate = new Map();
   (data||[]).forEach(r=>{
     const list = byDate.get(r.tarikh) || [];
-    list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
+    list.push({
+      start: r.masa_mula,
+      end: r.masa_tamat,
+      category: r.kategori,
+      note: r.tujuan || '',
+      hours: diffHours(r.masa_mula, r.masa_tamat)
+    });
     byDate.set(r.tarikh, list);
   });
-
-  const mins = (t)=>{ const [h,m]=String(t).split(':').map(Number); return h*60+m; };
 
   const days = [];
   const last = Number(to.slice(-2));
@@ -97,45 +108,39 @@ async function getMonthView({ room, year, month }){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
     const bookings = byDate.get(ymd) || [];
 
-    // penuh jika ada mana-mana booking ≥ 360 minit
-    const hasLong = bookings.some(b => (mins(b.end) - mins(b.start)) >= 360);
-    const status = bookings.length === 0 ? 'green' : (hasLong ? 'red' : 'orange');
+    // LOGIK BARU: jika ada tempahan ≥ 6 jam => PENUH
+    const hasLong = bookings.some(b => b.hours >= 6);
+    const count = bookings.length;
+    const status = hasLong ? 'red' : (count===0 ? 'green' : (count>=6 ? 'red' : 'orange'));
 
     days.push({ date: ymd, weekday: (new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings });
   }
   return { days };
 }
 
-/* ====== [6 JAM] GANTI: getMonthRoomsOverview — kira merah ikut slot ≥ 6 jam ====== */
 async function getMonthRoomsOverview({ year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
     .from('v_bookings_active')
-    .select('tarikh,bilik,masa_mula,masa_tamat')   // perlu masa untuk kira 6 jam
+    .select('tarikh,bilik')
     .gte('tarikh', from).lte('tarikh', to);
   if (error) throw error;
 
-  const mins = (t)=>{ const [h,m]=String(t).split(':').map(Number); return h*60+m; };
-
-  // "date|room" -> status ('red' jika ada mana-mana tempahan >=6 jam, selain itu 'orange')
-  const perRoomPerDay = new Map();
+  const map = new Map();
+  const perRoomPerDay = new Map(); // "date|room" -> count
   (data||[]).forEach(r=>{
     const key = `${r.tarikh}|${r.bilik}`;
-    const long = (mins(r.masa_tamat) - mins(r.masa_mula)) >= 360;
-    const prev = perRoomPerDay.get(key);
-    const next = prev === 'red' ? 'red' : (long ? 'red' : 'orange');
-    perRoomPerDay.set(key, next);
+    perRoomPerDay.set(key, (perRoomPerDay.get(key)||0) + 1);
   });
-
-  const map = new Map();
   const last = Number(to.slice(-2));
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
     const rooms = [];
     let red=0, orange=0;
-    perRoomPerDay.forEach((status, key)=>{
+    perRoomPerDay.forEach((cnt, key)=>{
       const [date, room] = key.split('|');
       if (date !== ymd) return;
+      const status = cnt>=6 ? 'red' : 'orange';
       if (status==='red') red++; else orange++;
       rooms.push({ room, status });
     });
@@ -330,51 +335,72 @@ async function refreshMonth(showLoading){
   try{
     const res = await getMonthView({ room: state.room, year: state.year, month: state.month });
     state.days = res.days || [];
-    renderCalendar(); highlightSelectedTile(); highlightRangeTiles(); updateRangeCounter();
+    renderCalendar();
     if(showLoading){ modalClose(); toastOk('Kalendar dikemas kini'); }
   }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat kalendar', err.message); }
 }
-// ===== GANTIKAN keseluruhan fungsi renderCalendar() dengan ini =====
+
+// >>>>>>> HANYA nampak hari ini dan ke depan
 function renderCalendar(){
   const grid = $('grid');
   grid.innerHTML = '';
-
   if (!state.days.length) return;
 
-  // Tarikh hari ini (YYYY-MM-DD)
   const today = todayYMD();
 
-  // Cari index hari pertama yang bukan lampau
+  // Mula render dari hari pertama yang >= hari ini
   const startIdx = state.days.findIndex(d => d.date >= today);
-  if (startIdx === -1) return; // tiada hari masa depan dalam bulan ini
+  if (startIdx === -1) return; // tiada baki hari bulan ini
 
   const daysToRender = state.days.slice(startIdx);
 
-  // Kira offset kosong ikut hari pertama yang dirender, bukan 1hb
+  // Offset ikut hari pertama yang dirender
   const firstDayToRender = daysToRender[0];
-  const weekdayOffset = (new Date(firstDayToRender.date).getDay() + 6) % 7; // 0 = Isnin
+  const weekdayOffset = (new Date(firstDayToRender.date).getDay() + 6) % 7; // 0=Isnin
 
-  const frag = document.createDocumentFragment();
-
-  for (let i = 0; i < weekdayOffset; i++) {
-    const x = document.createElement('div');
-    x.className = 'blank';
-    frag.appendChild(x);
+  const docFrag = document.createDocumentFragment();
+  for(let i=0;i<weekdayOffset;i++){
+    const x=document.createElement('div');
+    x.className='blank';
+    docFrag.appendChild(x);
   }
-
-  for (const dayData of daysToRender) {
-    frag.appendChild(buildTile(dayData));
+  for(const dayData of daysToRender){
+    docFrag.appendChild(buildTile(dayData));
   }
+  grid.appendChild(docFrag);
 
-  grid.appendChild(frag);
+  if (state.selectedDate && state.selectedDate < today) state.selectedDate = null;
+  highlightSelectedTile(); highlightRangeTiles(); updateRangeCounter();
+}
 
-  // Jika pilihan tarikh sebelum hari ini, kosongkan
-  if (state.selectedDate && state.selectedDate < today) {
-    state.selectedDate = null;
+function buildTile(day){
+  const isWeekend = (new Date(day.date).getDay()===0 || new Date(day.date).getDay()===6);
+  const tile=document.createElement('div');
+  tile.className=`tile ${ (day.isPast||isWeekend) ? 'disabled':'' }`;
+  tile.dataset.date=day.date;
+  const top=document.createElement('div'); top.className='date'; top.textContent=Number(day.date.slice(8,10));
+  if (!day.isPast && !isWeekend) {
+    const statusMap = {red:'Penuh', orange:'Separa Penuh', green:'Tiada tempahan'};
+    const badge=document.createElement('span'); badge.className=`badge ${day.status}`; badge.textContent = statusMap[day.status] || '';
+    top.appendChild(badge);
   }
-  highlightSelectedTile();
-  highlightRangeTiles();
-  updateRangeCounter();
+  tile.appendChild(top);
+  const body=document.createElement('div'); body.className='body';
+  if(!day.isPast && !isWeekend){
+    const list=document.createElement('div'); list.className='small';
+    if(day.bookings && day.bookings.length > 0){
+      (day.bookings||[]).forEach(b=>{
+        const p=document.createElement('div');
+        const note=b.note?` • ${String(b.note).slice(0,30)}${b.note.length>30?'…':''}`:'';
+        p.textContent=`${b.start}–${b.end} • ${b.category}${note}`; list.appendChild(p);
+      });
+    } else {
+      const p=document.createElement('div'); p.className='small'; p.textContent='Tiada tempahan.'; list.appendChild(p);
+    }
+    body.appendChild(list);
+  }
+  tile.appendChild(body);
+  return tile;
 }
 
 function onGridClick(ev){
