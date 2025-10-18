@@ -596,4 +596,3 @@ async function onBulkCancel(){
     await loadAdminUpcoming(); if(state.room) await refreshMonth(false); await loadOverview(false);
   }catch(err){ modalClose(); modalError('Gagal membatalkan', err.message); }
 }
-
