@@ -334,43 +334,49 @@ async function refreshMonth(showLoading){
     if(showLoading){ modalClose(); toastOk('Kalendar dikemas kini'); }
   }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat kalendar', err.message); }
 }
+// ===== GANTIKAN keseluruhan fungsi renderCalendar() dengan ini =====
 function renderCalendar(){
-  const grid=$('grid'); grid.innerHTML=''; if(state.days.length===0) return;
-  const docFrag=document.createDocumentFragment();
-  const first=state.days[0]; const weekday=(new Date(first.date).getDay()+6)%7; // 0 = Isnin
-  for(let i=0;i<weekday;i++){ const x=document.createElement('div'); x.className='blank'; docFrag.appendChild(x); }
-  for(const dayData of state.days){ docFrag.appendChild(buildTile(dayData)); }
-  grid.appendChild(docFrag);
-}
-function buildTile(day){
-  const isWeekend = (new Date(day.date).getDay()===0 || new Date(day.date).getDay()===6);
-  const tile=document.createElement('div');
-  tile.className=`tile ${ (day.isPast||isWeekend) ? 'disabled':'' }`;
-  tile.dataset.date=day.date;
-  const top=document.createElement('div'); top.className='date'; top.textContent=Number(day.date.slice(8,10));
-  if (!day.isPast && !isWeekend) {
-    const statusMap = {red:'Penuh', orange:'Separa Penuh', green:'Tiada tempahan'};
-    const badge=document.createElement('span'); badge.className=`badge ${day.status}`; badge.textContent = statusMap[day.status] || '';
-    top.appendChild(badge);
+  const grid = $('grid');
+  grid.innerHTML = '';
+
+  if (!state.days.length) return;
+
+  // Tarikh hari ini (YYYY-MM-DD)
+  const today = todayYMD();
+
+  // Cari index hari pertama yang bukan lampau
+  const startIdx = state.days.findIndex(d => d.date >= today);
+  if (startIdx === -1) return; // tiada hari masa depan dalam bulan ini
+
+  const daysToRender = state.days.slice(startIdx);
+
+  // Kira offset kosong ikut hari pertama yang dirender, bukan 1hb
+  const firstDayToRender = daysToRender[0];
+  const weekdayOffset = (new Date(firstDayToRender.date).getDay() + 6) % 7; // 0 = Isnin
+
+  const frag = document.createDocumentFragment();
+
+  for (let i = 0; i < weekdayOffset; i++) {
+    const x = document.createElement('div');
+    x.className = 'blank';
+    frag.appendChild(x);
   }
-  tile.appendChild(top);
-  const body=document.createElement('div'); body.className='body';
-  if(!day.isPast && !isWeekend){
-    const list=document.createElement('div'); list.className='small';
-    if(day.bookings && day.bookings.length > 0){
-      (day.bookings||[]).forEach(b=>{
-        const p=document.createElement('div');
-        const note=b.note?` • ${String(b.note).slice(0,30)}${b.note.length>30?'…':''}`:'';
-        p.textContent=`${b.start}–${b.end} • ${b.category}${note}`; list.appendChild(p);
-      });
-    } else {
-      const p=document.createElement('div'); p.className='small'; p.textContent='Tiada tempahan.'; list.appendChild(p);
-    }
-    body.appendChild(list);
+
+  for (const dayData of daysToRender) {
+    frag.appendChild(buildTile(dayData));
   }
-  tile.appendChild(body);
-  return tile;
+
+  grid.appendChild(frag);
+
+  // Jika pilihan tarikh sebelum hari ini, kosongkan
+  if (state.selectedDate && state.selectedDate < today) {
+    state.selectedDate = null;
+  }
+  highlightSelectedTile();
+  highlightRangeTiles();
+  updateRangeCounter();
 }
+
 function onGridClick(ev){
   const tile = ev.target.closest('.tile'); if(!tile || tile.classList.contains('disabled')) return;
   const dayData = state.days.find(d => d.date === tile.dataset.date);
