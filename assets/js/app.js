@@ -60,7 +60,7 @@ function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&
 function addDaysYMD(ymd,n){ const [y,m,d]=ymd.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return toYMD(dt); }
 
 /* ========= State ========= */
-let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false };
+let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false, adminItems: [] };
 let ov = { year:null, month:null, days:[], view:'calendar', filterRoom:'' };
 let ADMIN_PASSWORD = '';
 
@@ -199,6 +199,24 @@ async function batalTempahanBulk({ ids, reason, adminPassword }){
   return { updated: data.updated|0 };
 }
 
+// PERLU TAMBAH FUNGSI RPC 'fn_update_booking' PADA SUPABASE
+async function updateBooking(args) {
+  const { data, error } = await supa.rpc('fn_update_booking', {
+    p_booking_id: args.id,
+    p_date: args.date,
+    p_start: args.start,
+    p_end: args.end,
+    p_category: args.category,
+    p_note: args.note,
+    p_sektor: args.sektor,
+    p_nama: args.nama,
+    p_admin_password: args.adminPassword
+  });
+  if (error) throw error;
+  if (!data?.ok) throw new Error(data?.error || 'Gagal mengemas kini');
+  return data;
+}
+
 /* ========= Bootstrap ========= */
 window.addEventListener('unhandledrejection', e => { modalClose(); Toast.fire({icon:'error', title:e.reason?.message || 'Ralat tidak dijangka.'}); });
 window.addEventListener('load', bootstrap);
@@ -264,6 +282,7 @@ function setupUI(){
   $('btnAdminLogin').addEventListener('click', onAdminLogin);
   $('btnAdminLoad').addEventListener('click', loadAdminUpcoming);
   $('btnBulkCancel').addEventListener('click', onBulkCancel);
+  $('adminList').addEventListener('click', onAdminListClick); // Tambah event listener untuk butang edit
 }
 function setupMonthNavigator({ stateObj, prevBtn, nextBtn, label, onShift }) {
   $(prevBtn).addEventListener('click', () => shiftMonth(-1));
@@ -298,7 +317,7 @@ function resetUI(){
   state.days=[]; $('grid').innerHTML=''; document.querySelectorAll('.tile.sel').forEach(el=>el.classList.remove('sel'));
   $('roomSelect').value=''; state.room=''; toggleCalendarHint();
   resetBookingForm(true);
-  $('adminRoom').value=''; $('adminList').innerHTML='';
+  $('adminRoom').value=''; $('adminList').innerHTML=''; state.adminItems=[];
   lockAdmin();
   switchTab('tempahan'); window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -563,13 +582,16 @@ async function onAdminLogin(){
 async function loadAdminUpcoming(){
   const room = $('adminRoom').value;
   if(!state.isAdmin){ return toastWarn('Log masuk pentadbir dahulu'); }
-  if(!room){ $('adminList').innerHTML='<div class="small">Sila pilih bilik untuk memuatkan senarai tempahan akan datang.</div>'; return; }
+  if(!room){ $('adminList').innerHTML='<div class="small">Sila pilih bilik untuk memuatkan senarai tempahan akan datang.</div>'; state.adminItems=[]; return; }
   $('adminList').innerHTML='<div class="small">Memuatkan data...</div>';
   try{
     const res = await listUpcomingBookings({ room });
-    const items = res.items || [];
+    state.adminItems = res.items || [];
+    const items = state.adminItems;
+    
     if(!items.length){ $('adminList').innerHTML='<div class="small">Tiada tempahan akan datang untuk bilik ini.</div>'; return; }
-    const html = ['<table><thead><tr><th style="width:34px"><input type="checkbox" id="chkAll"></th><th style="width:120px">Tarikh</th><th style="width:120px">Masa</th><th>Bilik</th><th style="width:160px">Kategori</th><th>Tujuan</th><th style="width:160px">Penempah</th></tr></thead><tbody>'];
+    
+    const html = ['<table><thead><tr><th style="width:34px"><input type="checkbox" id="chkAll"></th><th style="width:120px">Tarikh</th><th style="width:120px">Masa</th><th>Bilik</th><th style="width:160px">Kategori</th><th>Tujuan</th><th style="width:160px">Penempah</th><th style="width:40px">Tind.</th></tr></thead><tbody>'];
     for(const it of items){
       html.push(`<tr>
         <td><input type="checkbox" class="chkCancel" data-id="${it.id}"></td>
@@ -579,6 +601,7 @@ async function loadAdminUpcoming(){
         <td>${it.category||''}</td>
         <td>${escapeHtml(it.note||'')}</td>
         <td>${escapeHtml(it.nama||'')}<div class="small">${it.sektor||''}</div></td>
+        <td><button class="btn-icon" data-id="${it.id}" title="Edit Tempahan">✏️</button></td>
       </tr>`);
     }
     html.push('</tbody></table>');
@@ -587,6 +610,7 @@ async function loadAdminUpcoming(){
     toastOk('Senarai dimuat');
   }catch(err){
     $('adminList').innerHTML='<div class="small" style="color:#dc2626">Gagal memuatkan data.</div>';
+    state.adminItems=[];
     modalError('Ralat memuat senarai', err.message);
   }
 }
@@ -604,4 +628,138 @@ async function onBulkCancel(){
     modalClose(); toastOk(`Dibatalkan: ${res.updated} tempahan`);
     await loadAdminUpcoming(); if(state.room) await refreshMonth(false); await loadOverview(false);
   }catch(err){ modalClose(); modalError('Gagal membatalkan', err.message); }
+}
+
+function onAdminListClick(ev) {
+  const btn = ev.target.closest('button.btn-icon[data-id]');
+  if (!btn) return;
+  if (!state.isAdmin) return toastWarn('Sila log masuk dahulu.');
+  
+  const id = btn.dataset.id;
+  const bookingData = state.adminItems.find(item => String(item.id) === id);
+  if (bookingData) {
+    openEditModal(bookingData);
+  } else {
+    toastWarn('Data tempahan tidak ditemui.');
+  }
+}
+
+async function openEditModal(bookingData) {
+  // Helper untuk jana <option>
+  const createOptions = (list, selected) => list.map(item => `<option value="${escapeHtml(item)}" ${item === selected ? 'selected' : ''}>${escapeHtml(item)}</option>`).join('');
+  
+  // Helper untuk jana <select> Sektor
+  const sektorList = Object.keys(NAMA_MENGIKUT_SEKTOR);
+  const sektorOptions = createOptions(sektorList, bookingData.sektor);
+
+  const { value: formValues } = await Swal.fire({
+    title: 'Edit Tempahan',
+    html: `
+      <div class="swal-form">
+        <div>
+          <label>Tarikh</label>
+          <input id="swal-date" type="date" class="swal2-input" value="${escapeHtml(bookingData.date)}">
+        </div>
+        <div>
+          <label>Kategori</label>
+          <select id="swal-category" class="swal2-input">
+            ${createOptions(CATEGORY_OPTIONS, bookingData.category)}
+          </select>
+        </div>
+        <div>
+          <label>Masa Mula</label>
+          <input id="swal-start" type="time" class="swal2-input" step="1800" value="${escapeHtml(bookingData.start)}">
+        </div>
+        <div>
+          <label>Masa Tamat</label>
+          <input id="swal-end" type="time" class="swal2-input" step="1800" value="${escapeHtml(bookingData.end)}">
+        </div>
+        <div class="full-width">
+          <label>Tujuan / Ringkasan</label>
+          <input id="swal-note" type="text" class="swal2-input" value="${escapeHtml(bookingData.note)}" placeholder="Tujuan / Ringkasan">
+        </div>
+        <div>
+          <label>Sektor</label>
+          <select id="swal-sektor" class="swal2-input">
+            <option value="">— Pilih Sektor —</option>
+            ${sektorOptions}
+          </select>
+        </div>
+        <div>
+          <label>Nama Penempah</label>
+          <select id="swal-nama" class="swal2-input" disabled>
+            <option value="">— Pilih sektor dahulu —</option>
+          </select>
+        </div>
+      </div>
+    `,
+    width: 700,
+    confirmButtonText: 'Kemas Kini',
+    showCancelButton: true,
+    cancelButtonText: 'Batal',
+    didOpen: () => {
+      const sektorSel = document.getElementById('swal-sektor');
+      const namaSel = document.getElementById('swal-nama');
+
+      // Fungsi untuk populate nama berdasarkan sektor
+      const populateSwalNama = () => {
+        const sek = sektorSel.value;
+        const list = NAMA_MENGIKUT_SEKTOR[sek];
+        namaSel.innerHTML = '';
+        if (!sek || !list) {
+          namaSel.add(new Option('— Pilih sektor dahulu —', ''));
+          namaSel.disabled = true;
+        } else {
+          namaSel.disabled = false;
+          namaSel.add(new Option('— Pilih nama —', ''));
+          list.forEach(n => namaSel.add(new Option(n, n)));
+        }
+      };
+      
+      sektorSel.addEventListener('change', populateSwalNama);
+      
+      // Panggil sekali untuk muat senarai nama sedia ada
+      populateSwalNama();
+      // Tetapkan nilai nama yang disimpan
+      namaSel.value = bookingData.nama || '';
+      if(namaSel.selectedIndex === -1) namaSel.selectedIndex = 0;
+    },
+    preConfirm: () => {
+      const data = {
+        date: document.getElementById('swal-date').value,
+        start: document.getElementById('swal-start').value,
+        end: document.getElementById('swal-end').value,
+        category: document.getElementById('swal-category').value,
+        note: document.getElementById('swal-note').value,
+        sektor: document.getElementById('swal-sektor').value,
+        nama: document.getElementById('swal-nama').value
+      };
+      
+      // Validasi mudah
+      if (!data.date || !data.start || !data.end || !data.category || !data.note || !data.sektor || !data.nama) {
+        Swal.showValidationMessage('Semua medan wajib diisi');
+        return false;
+      }
+      return data;
+    }
+  });
+
+  if (formValues) {
+    modalLoading('Mengemas kini tempahan...');
+    try {
+      await updateBooking({
+        ...formValues,
+        id: bookingData.id,
+        adminPassword: ADMIN_PASSWORD
+      });
+      modalClose();
+      toastOk('Tempahan berjaya dikemas kini');
+      await loadAdminUpcoming(); // Muat semula senarai admin
+      if (state.room) await refreshMonth(false); // Muat semula kalendar utama jika bilik dipilih
+      await loadOverview(false); // Muat semula rumusan
+    } catch (err) {
+      modalClose();
+      modalError('Gagal Kemas Kini', err.message);
+    }
+  }
 }
