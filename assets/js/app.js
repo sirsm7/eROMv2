@@ -36,6 +36,7 @@ const NAMA_MENGIKUT_SEKTOR = {
   "Sektor Pengurusan": ["Pn. Asmalaili Binti Ahmad Sanusi","En. Mohd Anuar Bin Abdul Hamid","Pn. Fahizah Binti Mohd Yusoff","Cik Nurul Jannah Binti Mohd Nasir","Pn. Nor Fizana Binti Md Idris","Pn. Nurul Ain Binti Mohd Zaini","Pn. Intan Liyana Binti Khamis","Pn. Habsah Binti Maidin","En. Md Zaki Zabani Bin Mohd Nor","Pn. Faizzah Binti Zulkefli","En. Mustafa Bin Musa","En. Rozamni Bin Muhamad","Pn. Katijah Binti Mohd Ali","En. Zasmeini Bin Zaimun","Pn. Suzanawati Binti Mohd Said","Pn. Kamsiah Binti Hashim","Pn. Hartiniwatie Binti Abang","En. Azharul Nizam Bin Othmawi","Pn. Rosedah Binti Muhamad","Pn. Noor 'Izzati Binti Johari","En. Mohd Arifin Bin Kamarudin","Pn. Siti Rajunah Binti Ab. Rahman","Pn. Fairus Binti Zainal","En. Hanizah Binti Minhat","Cik Siti Aishah Binti Md Hassan","Cik Nurain Nabihah Binti Nasaruddin","En. Mohd Fauzi Bin Mohamed Ali","En. Muhammad Nasiruddin Bin Muei","En. Muhammad Fadhli Mustaqim Bin Mazlan","En. Muhammad Afiq Bin Yang Rosdi","Pn. Haslina Binti Beeran Kutty"]
 };
 
+
 /* ========= Utiliti ========= */
 const Toast = Swal.mixin({ toast:true, position:'top', showConfirmButton:false, timer:2200, timerProgressBar:true });
 const $ = id => document.getElementById(id);
@@ -68,7 +69,7 @@ async function getInit(){
   return { rooms:[...ROOM_OPTIONS], categories:[...CATEGORY_OPTIONS], sektor:Object.keys(NAMA_MENGIKUT_SEKTOR) };
 }
 
-/* ===== Kalendar bilik (Tempahan) — status ikut 6 jam ===== */
+/* ===== Kalendar bilik (Tempahan) — status ikut 6 jam kumulatif ===== */
 async function getMonthView({ room, year, month }){
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -80,13 +81,15 @@ async function getMonthView({ room, year, month }){
     .order('masa_mula',{ascending:true});
   if (error) throw error;
 
-  // bina indeks harian
-  const byDate = new Map(); // tarikh -> { list:[], count, hasLong }
+  // bina indeks harian dengan jumlah minit
+  const byDate = new Map(); // tarikh -> { list:[], count, hasLong, totalMin }
   (data||[]).forEach(r=>{
-    const cur = byDate.get(r.tarikh) || { list:[], count:0, hasLong:false };
+    const cur = byDate.get(r.tarikh) || { list:[], count:0, hasLong:false, totalMin:0 };
+    const durMin = Math.max(0, toMinutes(r.masa_tamat) - toMinutes(r.masa_mula));
     cur.list.push({ start:r.masa_mula, end:r.masa_tamat, category:r.kategori, note:r.tujuan||'' });
     cur.count += 1;
-    if (diffHours(r.masa_mula, r.masa_tamat) >= 6) cur.hasLong = true;
+    cur.totalMin += durMin;
+    if (durMin >= 360) cur.hasLong = true;           // satu slot ≥ 6 jam
     byDate.set(r.tarikh, cur);
   });
 
@@ -94,15 +97,17 @@ async function getMonthView({ room, year, month }){
   const last = Number(to.slice(-2));
   for(let d=1; d<=last; d++){
     const ymd = `${year}-${pad2(month)}-${pad2(d)}`;
-    const dayInfo = byDate.get(ymd) || { list:[], count:0, hasLong:false };
-    // LOGIK 6 JAM: jika ada mana-mana tempahan >=6 jam => PENUH
-    const status = dayInfo.hasLong ? 'red' : (dayInfo.count===0 ? 'green' : (dayInfo.count>=6 ? 'red' : 'orange'));
+    const dayInfo = byDate.get(ymd) || { list:[], count:0, hasLong:false, totalMin:0 };
+    // Penuh jika: ada slot ≥6 jam ATAU jumlah minit ≥360 ATAU bilangan ≥6
+    const status = (dayInfo.hasLong || dayInfo.totalMin >= 360 || dayInfo.count >= 6)
+      ? 'red'
+      : (dayInfo.count===0 ? 'green' : 'orange');
     days.push({ date: ymd, weekday:(new Date(ymd).getDay()), isPast: ymd < todayYMD(), status, bookings: dayInfo.list });
   }
   return { days };
 }
 
-/* ===== Rumusan semua bilik — status ikut 6 jam ===== */
+/* ===== Rumusan semua bilik — status ikut 6 jam kumulatif ===== */
 async function getMonthRoomsOverview({ year, month }) {
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -111,13 +116,15 @@ async function getMonthRoomsOverview({ year, month }) {
     .gte('tarikh', from).lte('tarikh', to);
   if (error) throw error;
 
-  // (date|room) -> {count, hasLong}
+  // (date|room) -> {count, hasLong, totalMin}
   const perRoomPerDay = new Map();
   (data || []).forEach(r => {
     const key = `${r.tarikh}|${r.bilik}`;
-    const cur = perRoomPerDay.get(key) || { count: 0, hasLong: false };
+    const cur = perRoomPerDay.get(key) || { count: 0, hasLong: false, totalMin: 0 };
+    const durMin = Math.max(0, toMinutes(r.masa_tamat) - toMinutes(r.masa_mula));
     cur.count += 1;
-    if (diffHours(r.masa_mula, r.masa_tamat) >= 6) cur.hasLong = true;
+    cur.totalMin += durMin;
+    if (durMin >= 360) cur.hasLong = true;
     perRoomPerDay.set(key, cur);
   });
 
@@ -129,12 +136,12 @@ async function getMonthRoomsOverview({ year, month }) {
     daysMap.set(ymd, { date: ymd, rooms: [], counts: { red: 0, orange: 0 } });
   }
 
-  // status: hasLong -> red; else count>=6 -> red; else orange
+  // status: penuh jika hasLong || totalMin≥360 || count≥6
   perRoomPerDay.forEach((val, key) => {
     const [date, room] = key.split('|');
     const day = daysMap.get(date);
     if (!day) return;
-    const status = val.hasLong ? 'red' : (val.count >= 6 ? 'red' : 'orange');
+    const status = (val.hasLong || val.totalMin >= 360 || val.count >= 6) ? 'red' : 'orange';
     day.rooms.push({ room, status });
     if (status === 'red') day.counts.red++; else day.counts.orange++;
   });
