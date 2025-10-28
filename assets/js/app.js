@@ -61,7 +61,8 @@ function addDaysYMD(ymd,n){ const [y,m,d]=ymd.split('-').map(Number); const dt=n
 
 /* ========= State ========= */
 let state = { isAdmin:false, year:null, month:null, room:'', days:[], selectedDate:null, range:{from:null,to:null}, rangeMode:false, adminItems: [] };
-let ov = { year:null, month:null, days:[], view:'calendar', filterRoom:'' };
+// UBAHSUAI: Tambah 'bookings' untuk simpan data jadual
+let ov = { year:null, month:null, days:[], bookings:[], view:'calendar', filterRoom:'' };
 let ADMIN_PASSWORD = '';
 
 /* ========= API ========= */
@@ -107,7 +108,7 @@ async function getMonthView({ room, year, month }){
   return { days };
 }
 
-/* ===== Rumusan semua bilik — status ikut 6 jam kumulatif ===== */
+/* ===== Rumusan semua bilik (Kalendar) — status ikut 6 jam kumulatif ===== */
 async function getMonthRoomsOverview({ year, month }) {
   const from = firstDay(year, month), to = lastDay(year, month);
   const { data, error } = await supa
@@ -148,6 +149,33 @@ async function getMonthRoomsOverview({ year, month }) {
 
   return { days: [...daysMap.values()] };
 }
+
+// FUNGSI BARU: Untuk memuatkan senarai tempahan terperinci bagi paparan 'Jadual'
+/* ===== Rumusan semua bilik (Jadual) — senarai terperinci ===== */
+async function getMonthBookingsList({ year, month }) {
+  const from = firstDay(year, month), to = lastDay(year, month);
+  const { data, error } = await supa
+    .from('v_bookings_active')
+    .select('tarikh, masa_mula, masa_tamat, bilik, kategori, tujuan, nama_penempah, sektor')
+    .gte('tarikh', from).lte('tarikh', to)
+    .order('tarikh', { ascending: true })
+    .order('masa_mula', { ascending: true });
+  if (error) throw error;
+  
+  return { 
+    items: (data || []).map(r => ({
+      date: r.tarikh,
+      start: r.masa_mula,
+      end: r.masa_tamat,
+      room: r.bilik,
+      category: r.kategori,
+      note: r.tujuan,
+      nama: r.nama_penempah,
+      sektor: r.sektor
+    }))
+  };
+}
+
 
 async function adminCheck(pw){
   const { data, error } = await supa.rpc('fn_admin_check', { pw });
@@ -500,26 +528,62 @@ async function onBook(){
 }
 
 /* ========= Rumusan ========= */
+// UBAHSUAI: 'loadOverview' kini memuatkan data berdasarkan 'ov.view' (kalendar atau jadual)
 async function loadOverview(showLoading){
   try{
     if(showLoading) modalLoading('Memuat rumusan...');
-    const res = await getMonthRoomsOverview({ year: ov.year, month: ov.month });
-    ov.days = Array.isArray(res.days) ? res.days : [];
+    
+    // Kosongkan data bulan lepas
+    ov.days = []; 
+    ov.bookings = [];
+
+    if (ov.view === 'calendar') {
+      const res = await getMonthRoomsOverview({ year: ov.year, month: ov.month });
+      ov.days = Array.isArray(res.days) ? res.days : [];
+    } else {
+      // Jika view 'table', panggil fungsi API baru
+      const res = await getMonthBookingsList({ year: ov.year, month: ov.month });
+      ov.bookings = Array.isArray(res.items) ? res.items : [];
+    }
+    
     renderOverview();
     if(showLoading){ modalClose(); toastOk('Rumusan dikemas kini'); }
-  }catch(err){ if(showLoading) modalClose(); modalError('Gagal memuat rumusan', err.message); }
+  }catch(err){ 
+    if(showLoading) modalClose(); 
+    modalError('Gagal memuat rumusan', err.message); 
+  }
 }
+
+// UBAHSUAI: 'switchOverviewView' kini akan memuatkan data jika ia belum wujud
 function switchOverviewView(view){
   ov.view = (view === 'table') ? 'table' : 'calendar';
   $('btnViewCalendar').classList.toggle('active', ov.view==='calendar');
   $('btnViewTable').classList.toggle('active', ov.view==='table');
   $('ovCalendarWrap').style.display = ov.view==='calendar' ? 'block' : 'none';
   $('ovTableWrap').style.display = ov.view==='table' ? 'block' : 'none';
-  renderOverview();
+
+  // Semak jika data untuk view ini sudah dimuat
+  const calDataLoaded = ov.days && ov.days.length > 0;
+  const tableDataLoaded = ov.bookings && ov.bookings.length > 0;
+
+  if (ov.view === 'calendar' && !calDataLoaded) {
+    loadOverview(true);
+  } else if (ov.view === 'table' && !tableDataLoaded) {
+    loadOverview(true); // Muat data jadual jika belum ada
+  } else {
+    renderOverview(); // Hanya render jika data sudah ada
+  }
 }
+
+// UBAHSUAI: Sembunyi ringkasan apabila dalam mod jadual
 function renderOverview(){
-  if (ov.view === 'calendar') { renderOvCalendar(); renderOvSummary(); }
-  else { renderOvTable(); }
+  if (ov.view === 'calendar') { 
+    renderOvCalendar(); 
+    renderOvSummary(); 
+  } else { 
+    renderOvTable(); 
+    $('ovSummaryWrap').style.display='none'; // Sembunyi ringkasan
+  }
 }
 function renderOvCalendar(){
   const grid = $('ovGrid'); grid.innerHTML='';
@@ -558,15 +622,37 @@ function renderOvSummary(){
   list.innerHTML = rows.map(([room,c])=> `• ${room} (${c} tempahan)`).join('<br>');
   $('ovSummaryWrap').style.display='block';
 }
+
+// UBAHSUAI: 'renderOvTable' kini memaparkan data tempahan terperinci dari 'ov.bookings'
 function renderOvTable(){
   const tbody = $('ovTableBody'); tbody.innerHTML='';
-  const rows = []; (ov.days||[]).forEach(d=>{ (d.rooms||[]).forEach(r=> rows.push({date:d.date, room:r.room, status:r.status})); });
-  const filtered = ov.filterRoom ? rows.filter(r=>r.room===ov.filterRoom) : rows;
-  filtered.sort((a,b)=> a.date.localeCompare(b.date) || (a.status==='red'?-1:1) || a.room.localeCompare(a.room,'ms'));
-  const frag=document.createDocumentFragment();
-  filtered.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${x.date}</td><td>${x.room}</td><td><span class="tag ${x.status==='red'?'red':'orange'}">${x.status==='red'?'Penuh':'Separa Penuh'}</span></td>`; frag.appendChild(tr); });
+  // Data kini dari ov.bookings, bukan ov.days
+  const bookings = ov.bookings || []; 
+  
+  const filtered = ov.filterRoom ? bookings.filter(b => b.room === ov.filterRoom) : bookings;
+  
+  // Tak perlu sort, data dari API sepatutnya sudah diisih (tarikh, masa_mula)
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;" class="small">Tiada tempahan ditemui untuk bulan ini.</td></tr>';
+    return;
+  }
+  
+  const frag = document.createDocumentFragment();
+  filtered.forEach(b => { 
+    const tr = document.createElement('tr'); 
+    tr.innerHTML = `
+      <td>${b.date || ''}</td>
+      <td>${(b.start||'')}–${(b.end||'')}</td>
+      <td>${escapeHtml(b.room || '')}</td>
+      <td>${escapeHtml(b.note || '')}</td>
+      <td>${escapeHtml(b.nama || '')}<div class="small">${escapeHtml(b.sektor || '')}</div></td>
+    `; 
+    frag.appendChild(tr); 
+  });
   tbody.appendChild(frag);
 }
+
 
 /* ========= Admin ========= */
 async function onAdminLogin(){
